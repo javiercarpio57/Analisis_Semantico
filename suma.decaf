@@ -1,0 +1,15 @@
+class Program {
+    string b;
+    boolean c;
+    int a, x;
+
+    void main(){
+        int num1;
+        int num2;
+        int resultado;
+        a = 10;
+        num1 = 2;
+        num2 = 3;
+        resultado = num1 + num2 + a;
+    }
+}
