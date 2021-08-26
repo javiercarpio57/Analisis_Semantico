@@ -23,9 +23,8 @@ public class DecafParser extends Parser {
 		MULTIPLY=31, DIVIDE=32, REMINDER=33, AND=34, OR=35, NOT=36, GREATER_OP=37, 
 		LESS_OP=38, GREATER_eq_op=39, LESS_eq_op=40, EQUAL_OP=41, ADD_eq_op=42, 
 		SUB_eq_op=43, EQUALITY_OP=44, UNEQUALITY_OP=45, POINT=46, ID=47, ALPHA=48, 
-		CHAR_LITERAL=49, DECIMAL_LITERAL=50, DIGIT=51, HEX_LITERAL=52, BOOL_LITERAL=53, 
-		STRING_LITERAL=54, ALPHA_NUM=55, HEX_DIGIT=56, LINE_COMMENT=57, COMMENT=58, 
-		NEWLINE=59, WHITESPACE=60;
+		DECIMAL_LITERAL=49, DIGIT=50, HEX_LITERAL=51, BOOL_LITERAL=52, STRING_LITERAL=53, 
+		ALPHA_NUM=54, HEX_DIGIT=55, LINE_COMMENT=56, COMMENT=57, NEWLINE=58, WHITESPACE=59;
 	public static final int
 		RULE_program = 0, RULE_declaration = 1, RULE_vardeclr = 2, RULE_vardeclrs = 3, 
 		RULE_field_declr = 4, RULE_array_id = 5, RULE_field_var = 6, RULE_var_id = 7, 
@@ -64,9 +63,9 @@ public class DecafParser extends Parser {
 			"LROUND", "RROUND", "COMMA", "QUOTES", "APOSTROPHE", "ADD", "SUB", "MULTIPLY", 
 			"DIVIDE", "REMINDER", "AND", "OR", "NOT", "GREATER_OP", "LESS_OP", "GREATER_eq_op", 
 			"LESS_eq_op", "EQUAL_OP", "ADD_eq_op", "SUB_eq_op", "EQUALITY_OP", "UNEQUALITY_OP", 
-			"POINT", "ID", "ALPHA", "CHAR_LITERAL", "DECIMAL_LITERAL", "DIGIT", "HEX_LITERAL", 
-			"BOOL_LITERAL", "STRING_LITERAL", "ALPHA_NUM", "HEX_DIGIT", "LINE_COMMENT", 
-			"COMMENT", "NEWLINE", "WHITESPACE"
+			"POINT", "ID", "ALPHA", "DECIMAL_LITERAL", "DIGIT", "HEX_LITERAL", "BOOL_LITERAL", 
+			"STRING_LITERAL", "ALPHA_NUM", "HEX_DIGIT", "LINE_COMMENT", "COMMENT", 
+			"NEWLINE", "WHITESPACE"
 		};
 	}
 	private static final String[] _SYMBOLIC_NAMES = makeSymbolicNames();
@@ -1319,7 +1318,7 @@ public class DecafParser extends Parser {
 			setState(240);
 			_errHandler.sync(this);
 			_la = _input.LA(1);
-			if ((((_la) & ~0x3f) == 0 && ((1L << _la) & ((1L << LROUND) | (1L << SUB) | (1L << NOT) | (1L << ID) | (1L << CHAR_LITERAL) | (1L << DECIMAL_LITERAL) | (1L << HEX_LITERAL) | (1L << BOOL_LITERAL))) != 0)) {
+			if ((((_la) & ~0x3f) == 0 && ((1L << _la) & ((1L << LROUND) | (1L << SUB) | (1L << NOT) | (1L << ID) | (1L << DECIMAL_LITERAL) | (1L << HEX_LITERAL) | (1L << BOOL_LITERAL) | (1L << STRING_LITERAL))) != 0)) {
 				{
 				setState(232);
 				expr(0);
@@ -1754,7 +1753,7 @@ public class DecafParser extends Parser {
 		public Int_literalContext int_literal() {
 			return getRuleContext(Int_literalContext.class,0);
 		}
-		public TerminalNode CHAR_LITERAL() { return getToken(DecafParser.CHAR_LITERAL, 0); }
+		public TerminalNode STRING_LITERAL() { return getToken(DecafParser.STRING_LITERAL, 0); }
 		public TerminalNode BOOL_LITERAL() { return getToken(DecafParser.BOOL_LITERAL, 0); }
 		public LiteralContext(ParserRuleContext parent, int invokingState) {
 			super(parent, invokingState);
@@ -1785,11 +1784,11 @@ public class DecafParser extends Parser {
 				int_literal();
 				}
 				break;
-			case CHAR_LITERAL:
+			case STRING_LITERAL:
 				enterOuterAlt(_localctx, 2);
 				{
 				setState(282);
-				match(CHAR_LITERAL);
+				match(STRING_LITERAL);
 				}
 				break;
 			case BOOL_LITERAL:
@@ -2131,7 +2130,7 @@ public class DecafParser extends Parser {
 	}
 
 	public static final String _serializedATN =
-		"\3\u608b\ua72a\u8133\ub9ed\u417c\u3be7\u7786\u5964\3>\u0135\4\2\t\2\4"+
+		"\3\u608b\ua72a\u8133\ub9ed\u417c\u3be7\u7786\u5964\3=\u0135\4\2\t\2\4"+
 		"\3\t\3\4\4\t\4\4\5\t\5\4\6\t\6\4\7\t\7\4\b\t\b\4\t\t\t\4\n\t\n\4\13\t"+
 		"\13\4\f\t\f\4\r\t\r\4\16\t\16\4\17\t\17\4\20\t\20\4\21\t\21\4\22\t\22"+
 		"\4\23\t\23\4\24\t\24\4\25\t\25\4\26\t\26\4\27\t\27\4\30\t\30\4\31\t\31"+
@@ -2155,8 +2154,8 @@ public class DecafParser extends Parser {
 		"\u0112\n\21\3\22\3\22\3\23\3\23\3\24\3\24\3\25\3\25\3\26\3\26\3\26\5\26"+
 		"\u011f\n\26\3\27\3\27\3\27\3\27\5\27\u0125\n\27\3\30\3\30\3\31\3\31\3"+
 		"\31\3\31\3\31\3\31\5\31\u012f\n\31\3\32\3\32\3\33\3\33\3\33\2\3\36\34"+
-		"\2\4\6\b\n\f\16\20\22\24\26\30\32\34\36 \"$&(*,.\60\62\64\2\b\4\2\64\64"+
-		"\66\66\3\2\'*\3\2./\3\2$%\3\2\37#\3\2+-\2\u014d\2\66\3\2\2\2\4F\3\2\2"+
+		"\2\4\6\b\n\f\16\20\22\24\26\30\32\34\36 \"$&(*,.\60\62\64\2\b\4\2\63\63"+
+		"\65\65\3\2\'*\3\2./\3\2$%\3\2\37#\3\2+-\2\u014d\2\66\3\2\2\2\4F\3\2\2"+
 		"\2\6H\3\2\2\2\bL\3\2\2\2\nZ\3\2\2\2\fe\3\2\2\2\16r\3\2\2\2\20t\3\2\2\2"+
 		"\22y\3\2\2\2\24\u0086\3\2\2\2\26\u009f\3\2\2\2\30\u00a1\3\2\2\2\32\u00e6"+
 		"\3\2\2\2\34\u00e8\3\2\2\2\36\u0104\3\2\2\2 \u0111\3\2\2\2\"\u0113\3\2"+
@@ -2228,7 +2227,7 @@ public class DecafParser extends Parser {
 		"\2\u0110\u0112\5\f\7\2\u0111\u010f\3\2\2\2\u0111\u0110\3\2\2\2\u0112!"+
 		"\3\2\2\2\u0113\u0114\t\2\2\2\u0114#\3\2\2\2\u0115\u0116\t\3\2\2\u0116"+
 		"%\3\2\2\2\u0117\u0118\t\4\2\2\u0118\'\3\2\2\2\u0119\u011a\t\5\2\2\u011a"+
-		")\3\2\2\2\u011b\u011f\5\"\22\2\u011c\u011f\7\63\2\2\u011d\u011f\7\67\2"+
+		")\3\2\2\2\u011b\u011f\5\"\22\2\u011c\u011f\7\67\2\2\u011d\u011f\7\66\2"+
 		"\2\u011e\u011b\3\2\2\2\u011e\u011c\3\2\2\2\u011e\u011d\3\2\2\2\u011f+"+
 		"\3\2\2\2\u0120\u0125\5.\30\2\u0121\u0125\5$\23\2\u0122\u0125\5&\24\2\u0123"+
 		"\u0125\5(\25\2\u0124\u0120\3\2\2\2\u0124\u0121\3\2\2\2\u0124\u0122\3\2"+

@@ -125,15 +125,6 @@ class DecafListener(ParseTreeListener):
         pass
 
 
-    # Enter a parse tree produced by DecafParser#method_call_inter.
-    def enterMethod_call_inter(self, ctx:DecafParser.Method_call_interContext):
-        pass
-
-    # Exit a parse tree produced by DecafParser#method_call_inter.
-    def exitMethod_call_inter(self, ctx:DecafParser.Method_call_interContext):
-        pass
-
-
     # Enter a parse tree produced by DecafParser#method_call.
     def enterMethod_call(self, ctx:DecafParser.Method_callContext):
         pass
@@ -158,15 +149,6 @@ class DecafListener(ParseTreeListener):
 
     # Exit a parse tree produced by DecafParser#location.
     def exitLocation(self, ctx:DecafParser.LocationContext):
-        pass
-
-
-    # Enter a parse tree produced by DecafParser#callout_arg.
-    def enterCallout_arg(self, ctx:DecafParser.Callout_argContext):
-        pass
-
-    # Exit a parse tree produced by DecafParser#callout_arg.
-    def exitCallout_arg(self, ctx:DecafParser.Callout_argContext):
         pass
 
 
