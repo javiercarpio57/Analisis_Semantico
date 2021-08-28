@@ -1,4 +1,5 @@
 // antlr4 Decaf.g4; javac Decaf*.java; grun Decaf program -gui fact_struct.decaf
+// grun Decaf program -gui fact_struct.decaf
 // antlr4 -Dlanguage=Python3 Decaf.g4
 
 // antlr4 Decaf.g4; javac Decaf*.java; antlr4 -Dlanguage=Python3 Decaf.g4
@@ -115,11 +116,9 @@ DECIMAL_LITERAL     : [0-9]+;
 
 DIGIT               : [0-9];
 
-HEX_LITERAL         : '0'[xX][0-9a-fA-F]+;
+//BOOL_LITERAL        : 'True' | 'False';
 
-BOOL_LITERAL        : TRUE | FALSE;
-
-STRING_LITERAL      : ('"' ( ALPHA )* '"') | (APOSTROPHE ( ALPHA )* APOSTROPHE);
+STRING_LITERAL      : ('"' ( ALPHA )+ '"') | (APOSTROPHE ( ALPHA )+ APOSTROPHE);
 
 ALPHA_NUM           : ALPHA | DIGIT;
 
@@ -162,30 +161,35 @@ return_type         : (var_type | VOID);
 
 block               : LCURLY (vardeclr | vardeclrs)* statement* RCURLY;
 
-statement           : location assign_op expr
-                    | location assign_op expr SEMICOLON
-                    | method_call
-                    | IF LROUND expr RROUND block (ELSE block)?
-                    | WHILE LROUND expr RROUND block
-                    | location EQUAL_OP expr SEMICOLON
-                    | RETURN expr SEMICOLON
-                    | FOR var_id (EQUAL_OP int_literal)? COMMA ((var_id (EQUAL_OP int_literal)?) | int_literal) block
-                    | BREAK SEMICOLON;
+statement           : location assign_op expr SEMICOLON? #statement_location
+                    | method_call #statement_methodcall
+                    | IF LROUND expr RROUND block (ELSE block)? #statement_if
+                    | WHILE LROUND expr RROUND block #statement_while
+                    | location EQUAL_OP expr SEMICOLON #statement_equal
+                    | RETURN expr SEMICOLON #statement_return
+                    | FOR var_id (EQUAL_OP int_literal)? COMMA ((var_id (EQUAL_OP int_literal)?) | int_literal) block #statement_for
+                    | BREAK SEMICOLON #statement_break
+                    ; 
 
 method_call         : method_name LROUND (expr (COMMA expr)*)? RROUND (SEMICOLON)?;
 
-expr                : location
-                    | literal
-                    | expr bin_op expr
+expr                : literal
+                    | location
+                    | expr (arith_op | rel_op | eq_op | cond_op) expr
                     | SUB expr
                     | method_call
                     | NOT expr
-                    | LROUND expr RROUND;
+                    | LROUND expr RROUND
+                    ;
+
 
 location            : var_id | array_id;
 
+int_literal         : DECIMAL_LITERAL;
 
-int_literal         : DECIMAL_LITERAL | HEX_LITERAL;
+string_literal      : STRING_LITERAL;
+
+bool_literal        : 'True' | 'False';
 
 rel_op              : GREATER_OP | LESS_OP | LESS_eq_op | GREATER_eq_op;
 
@@ -193,9 +197,7 @@ eq_op               : EQUALITY_OP | UNEQUALITY_OP;
 
 cond_op             : AND | OR;
 
-literal             : int_literal | STRING_LITERAL | BOOL_LITERAL;
-
-bin_op              : arith_op | rel_op | eq_op | cond_op;
+literal             : int_literal | string_literal | bool_literal;
 
 arith_op            : ADD | SUB | MULTIPLY | DIVIDE | REMINDER;
 

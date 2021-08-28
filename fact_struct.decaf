@@ -1,6 +1,7 @@
 class Program {
-	string a;
+	string a, f;
 	int b;
+	boolean c;
 	struct A
 	{
 		int a;
@@ -13,8 +14,8 @@ class Program {
 	};
 
 
-	int factorial(int n, int m) {
-		if (n==0)
+	int factorial(int n) {
+		if ((n==0) || (1==1) )
 		{
 			return 1;
 		}
@@ -27,6 +28,8 @@ class Program {
 
 	void main() {
 		string a;
+		// struct B g;
+		// g.c.a = 1;
 		a = "abc";
 		b = factorial(b);
 	}

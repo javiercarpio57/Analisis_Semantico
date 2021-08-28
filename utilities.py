@@ -96,6 +96,12 @@ class SemanticError():
         self.errores = []
         self.IDENTIFICADOR_DECLARADO_MUCHAS_VECES = 'Identificador no puede estar declarado más de una vez en el mismo ámbito.'
         self.MAIN_PARAMETERLESS = 'No existe un método llamado main sin parámetros.'
+        self.NUMERO_PARAMETROS_METODO = 'El número de argumentos en la llamada al método no coincide.'
+        self.TIPO_PARAMETROS_METODO = 'El tipo de dato en los argumentos en la llamada al método no coincide.'
+        self.EQ_OPS = 'El tipo de dato de operandos no es el mismo para los operadores "==" y "!=".'
+        self.ARITH_OP = 'El tipo de dato de operandos no es el mismo para los operadores "==" y "!=".'
+        self.REL_OP = 'El tipo de dato de operandos no es el mismo para los operadores "==" y "!=".'
+        self.COND_OP = 'El tipo de dato en operación condicional debe ser boolean.'
 
     def Add(self, line, col, msg):
         self.errores.append({

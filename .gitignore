@@ -25,4 +25,5 @@ hs_err_pid*
 .antlr
 antlr4
 antlrvenv
+.vscode
 __pycache__

@@ -127,15 +127,101 @@ public interface DecafListener extends ParseTreeListener {
 	 */
 	void exitBlock(DecafParser.BlockContext ctx);
 	/**
-	 * Enter a parse tree produced by {@link DecafParser#statement}.
+	 * Enter a parse tree produced by the {@code statement_location}
+	 * labeled alternative in {@link DecafParser#statement}.
 	 * @param ctx the parse tree
 	 */
-	void enterStatement(DecafParser.StatementContext ctx);
+	void enterStatement_location(DecafParser.Statement_locationContext ctx);
 	/**
-	 * Exit a parse tree produced by {@link DecafParser#statement}.
+	 * Exit a parse tree produced by the {@code statement_location}
+	 * labeled alternative in {@link DecafParser#statement}.
 	 * @param ctx the parse tree
 	 */
-	void exitStatement(DecafParser.StatementContext ctx);
+	void exitStatement_location(DecafParser.Statement_locationContext ctx);
+	/**
+	 * Enter a parse tree produced by the {@code statement_methodcall}
+	 * labeled alternative in {@link DecafParser#statement}.
+	 * @param ctx the parse tree
+	 */
+	void enterStatement_methodcall(DecafParser.Statement_methodcallContext ctx);
+	/**
+	 * Exit a parse tree produced by the {@code statement_methodcall}
+	 * labeled alternative in {@link DecafParser#statement}.
+	 * @param ctx the parse tree
+	 */
+	void exitStatement_methodcall(DecafParser.Statement_methodcallContext ctx);
+	/**
+	 * Enter a parse tree produced by the {@code statement_if}
+	 * labeled alternative in {@link DecafParser#statement}.
+	 * @param ctx the parse tree
+	 */
+	void enterStatement_if(DecafParser.Statement_ifContext ctx);
+	/**
+	 * Exit a parse tree produced by the {@code statement_if}
+	 * labeled alternative in {@link DecafParser#statement}.
+	 * @param ctx the parse tree
+	 */
+	void exitStatement_if(DecafParser.Statement_ifContext ctx);
+	/**
+	 * Enter a parse tree produced by the {@code statement_while}
+	 * labeled alternative in {@link DecafParser#statement}.
+	 * @param ctx the parse tree
+	 */
+	void enterStatement_while(DecafParser.Statement_whileContext ctx);
+	/**
+	 * Exit a parse tree produced by the {@code statement_while}
+	 * labeled alternative in {@link DecafParser#statement}.
+	 * @param ctx the parse tree
+	 */
+	void exitStatement_while(DecafParser.Statement_whileContext ctx);
+	/**
+	 * Enter a parse tree produced by the {@code statement_equal}
+	 * labeled alternative in {@link DecafParser#statement}.
+	 * @param ctx the parse tree
+	 */
+	void enterStatement_equal(DecafParser.Statement_equalContext ctx);
+	/**
+	 * Exit a parse tree produced by the {@code statement_equal}
+	 * labeled alternative in {@link DecafParser#statement}.
+	 * @param ctx the parse tree
+	 */
+	void exitStatement_equal(DecafParser.Statement_equalContext ctx);
+	/**
+	 * Enter a parse tree produced by the {@code statement_return}
+	 * labeled alternative in {@link DecafParser#statement}.
+	 * @param ctx the parse tree
+	 */
+	void enterStatement_return(DecafParser.Statement_returnContext ctx);
+	/**
+	 * Exit a parse tree produced by the {@code statement_return}
+	 * labeled alternative in {@link DecafParser#statement}.
+	 * @param ctx the parse tree
+	 */
+	void exitStatement_return(DecafParser.Statement_returnContext ctx);
+	/**
+	 * Enter a parse tree produced by the {@code statement_for}
+	 * labeled alternative in {@link DecafParser#statement}.
+	 * @param ctx the parse tree
+	 */
+	void enterStatement_for(DecafParser.Statement_forContext ctx);
+	/**
+	 * Exit a parse tree produced by the {@code statement_for}
+	 * labeled alternative in {@link DecafParser#statement}.
+	 * @param ctx the parse tree
+	 */
+	void exitStatement_for(DecafParser.Statement_forContext ctx);
+	/**
+	 * Enter a parse tree produced by the {@code statement_break}
+	 * labeled alternative in {@link DecafParser#statement}.
+	 * @param ctx the parse tree
+	 */
+	void enterStatement_break(DecafParser.Statement_breakContext ctx);
+	/**
+	 * Exit a parse tree produced by the {@code statement_break}
+	 * labeled alternative in {@link DecafParser#statement}.
+	 * @param ctx the parse tree
+	 */
+	void exitStatement_break(DecafParser.Statement_breakContext ctx);
 	/**
 	 * Enter a parse tree produced by {@link DecafParser#method_call}.
 	 * @param ctx the parse tree
@@ -177,6 +263,26 @@ public interface DecafListener extends ParseTreeListener {
 	 */
 	void exitInt_literal(DecafParser.Int_literalContext ctx);
 	/**
+	 * Enter a parse tree produced by {@link DecafParser#string_literal}.
+	 * @param ctx the parse tree
+	 */
+	void enterString_literal(DecafParser.String_literalContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link DecafParser#string_literal}.
+	 * @param ctx the parse tree
+	 */
+	void exitString_literal(DecafParser.String_literalContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link DecafParser#bool_literal}.
+	 * @param ctx the parse tree
+	 */
+	void enterBool_literal(DecafParser.Bool_literalContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link DecafParser#bool_literal}.
+	 * @param ctx the parse tree
+	 */
+	void exitBool_literal(DecafParser.Bool_literalContext ctx);
+	/**
 	 * Enter a parse tree produced by {@link DecafParser#rel_op}.
 	 * @param ctx the parse tree
 	 */
@@ -216,16 +322,6 @@ public interface DecafListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	void exitLiteral(DecafParser.LiteralContext ctx);
-	/**
-	 * Enter a parse tree produced by {@link DecafParser#bin_op}.
-	 * @param ctx the parse tree
-	 */
-	void enterBin_op(DecafParser.Bin_opContext ctx);
-	/**
-	 * Exit a parse tree produced by {@link DecafParser#bin_op}.
-	 * @param ctx the parse tree
-	 */
-	void exitBin_op(DecafParser.Bin_opContext ctx);
 	/**
 	 * Enter a parse tree produced by {@link DecafParser#arith_op}.
 	 * @param ctx the parse tree
