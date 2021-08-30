@@ -102,6 +102,9 @@ class SemanticError():
         self.ARITH_OP = 'El tipo de dato de operandos no es el mismo para los operadores "==" y "!=".'
         self.REL_OP = 'El tipo de dato de operandos no es el mismo para los operadores "==" y "!=".'
         self.COND_OP = 'El tipo de dato en operación condicional debe ser boolean.'
+        self.IF_BOOLEAN = 'El tipo de dato dentro de condición de IF debe ser boolean.'
+        self.ASIGNACION = 'La asignación de dos valores deben ser del mismo tipo.'
+        self.RETURN_TYPE = 'El valor de retorno debe de ser del mismo tipo con que fue declarado el método.'
 
     def Add(self, line, col, msg):
         self.errores.append({

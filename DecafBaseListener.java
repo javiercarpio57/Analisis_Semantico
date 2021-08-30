@@ -159,13 +159,13 @@ public class DecafBaseListener implements DecafListener {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterStatement_location(DecafParser.Statement_locationContext ctx) { }
+	@Override public void enterStatement_assign(DecafParser.Statement_assignContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitStatement_location(DecafParser.Statement_locationContext ctx) { }
+	@Override public void exitStatement_assign(DecafParser.Statement_assignContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
@@ -202,18 +202,6 @@ public class DecafBaseListener implements DecafListener {
 	 * <p>The default implementation does nothing.</p>
 	 */
 	@Override public void exitStatement_while(DecafParser.Statement_whileContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void enterStatement_equal(DecafParser.Statement_equalContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void exitStatement_equal(DecafParser.Statement_equalContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *

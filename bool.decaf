@@ -2,7 +2,7 @@ class Program
 {
     void main(void)
     {
-        boolean a;
-        a = False;
+        string a;
+        s = '11';
     }
 }

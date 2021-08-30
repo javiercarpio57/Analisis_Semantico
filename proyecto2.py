@@ -4,7 +4,7 @@ from antlr4.tree.Trees import TerminalNode
 from DecafLexer import DecafLexer
 from DecafListener import DecafListener
 from DecafParser import DecafParser
-
+from itertools import groupby
 from utilities import *
 
 import sys
@@ -57,9 +57,15 @@ class DecafPrinter(DecafListener):
     def Intersection(self, a, b):
         return [v for v in a if v in b]
 
+    def all_equal(self, iterable):
+        g = groupby(iterable)
+        return next(g, True) and not next(g, False)
+
     def enterProgram(self, ctx: DecafParser.ProgramContext):
         print('---------- INICIO --------------')
         self.current_scope = TablaSimbolos()
+
+    # def 
 
     def enterMethod_declr(self, ctx: DecafParser.Method_declrContext):
         method = ctx.method_name().getText()
@@ -95,7 +101,18 @@ class DecafPrinter(DecafListener):
             self.current_scope.Add(parameter['Tipo'], parameter['Id'], size, offset, True)
 
     def exitMethod_declr(self, ctx: DecafParser.Method_declrContext):
+        method = ctx.method_name().getText()
+        print('Saliendo metodo', method)
         self.PopScope()
+
+        return_type = ctx.return_type().getText()
+        block_type = self.node_type[ctx.block()]
+        print('VERIFICANDO RETORNOS', return_type, block_type)
+        if return_type != block_type:
+            self.node_type[ctx] = self.ERROR
+            line = ctx.block().start.line
+            col = ctx.block().start.column
+            self.errores.Add(line, col, self.errores.RETURN_TYPE)
 
     def enterVardeclr(self, ctx: DecafParser.VardeclrContext):
         tipo = ctx.var_type().getText()
@@ -116,7 +133,8 @@ class DecafPrinter(DecafListener):
             line = ctx.field_var().var_id().start.line
             col = ctx.field_var().var_id().start.column
             self.errores.Add(line, col, self.errores.IDENTIFICADOR_DECLARADO_MUCHAS_VECES)
-        
+       
+                
 
     def enterStruct_declr(self, cstx: DecafParser.Struct_declrContext):
         self.NewScope()
@@ -209,6 +227,34 @@ class DecafPrinter(DecafListener):
     def exitLiteral(self, ctx: DecafParser.LiteralContext):
         self.node_type[ctx] = self.node_type[ctx.getChild(0)]
 
+    def enterBlock(self, ctx: DecafParser.BlockContext):
+        parent = ctx.parentCtx
+        
+        if not isinstance(parent, DecafParser.Method_declrContext):
+            self.NewScope()
+
+    def exitBlock(self, ctx: DecafParser.BlockContext):
+        parent = ctx.parentCtx
+        
+        if not isinstance(parent, DecafParser.Method_declrContext):
+            self.PopScope()
+
+        hijos_tipo = [self.node_type[i] for i in ctx.children if isinstance(i, DecafParser.StatementContext)]
+        filtered = list(filter(lambda tipo: tipo != self.VOID, hijos_tipo))
+        if len(filtered) == 0:
+            self.node_type[ctx] = self.VOID
+            return
+
+        if len(filtered) == 1:
+            self.node_type[ctx] = filtered.pop()
+            return
+        print('BLOCK HIJOS', filtered)
+
+        if self.all_equal(filtered):
+            self.node_type[ctx] = filtered.pop()
+        else:
+            self.node_type[ctx] = self.ERROR
+
     def exitMethod_call(self, ctx: DecafParser.Method_callContext):
         name = ctx.method_name().getText()
         parameters = []
@@ -225,7 +271,7 @@ class DecafPrinter(DecafListener):
             line = ctx.method_name().start.line
             col = ctx.method_name().start.column
             self.errores.Add(line, col, self.errores.NUMERO_PARAMETROS_METODO)
-            pass
+            return
 
         hasError = False
         for i in range(len(parameters)):
@@ -244,7 +290,61 @@ class DecafPrinter(DecafListener):
             else:
                 self.node_type[ctx] = method_info['Tipo']
 
+    def exitStatement_if(self, ctx: DecafParser.Statement_ifContext):
+        tipo_if = self.node_type[ctx.expr()]
+        
+        if tipo_if != self.BOOLEAN:
+            self.node_type[ctx] = self.ERROR
+            line = ctx.expr().start.line
+            col = ctx.expr().start.column
+            self.errores.Add(line, col, self.errores.IF_BOOLEAN)
+            return
 
+        hijos_tipo = [self.node_type[i] for i in ctx.children if isinstance(i, DecafParser.BlockContext)]
+        if len(hijos_tipo) == 1:
+            self.node_type[ctx] = hijos_tipo.pop()
+        else:
+            if hijos_tipo[0] == hijos_tipo[1]:
+                self.node_type[ctx] = hijos_tipo.pop()
+            else:
+                self.node_type[ctx] = self.ERROR
+        
+
+    def exitStatement_while(self, ctx: DecafParser.Statement_whileContext):
+        tipo_while = self.node_type[ctx.expr()]
+        
+        if tipo_while != self.BOOLEAN:
+            self.node_type[ctx] = self.ERROR
+            line = ctx.expr().start.line
+            col = ctx.expr().start.column
+            self.errores.Add(line, col, self.errores.IF_BOOLEAN)
+            return
+
+        hijos_tipo = [self.node_type[i] for i in ctx.children if isinstance(i, DecafParser.BlockContext)]
+        if len(hijos_tipo) == 1:
+            self.node_type[ctx] = hijos_tipo.pop()
+
+
+    def exitStatement_return(self, ctx: DecafParser.Statement_returnContext):
+        self.node_type[ctx] = self.node_type[ctx.expr()]
+
+    def exitStatement_methodcall(self, ctx: DecafParser.Statement_methodcallContext):
+        self.node_type[ctx] = self.node_type[ctx.method_call()]
+
+    def exitStatement_break(self, ctx: DecafParser.Statement_breakContext):
+        self.node_type[ctx] = self.VOID
+
+    def exitStatement_assign(self, ctx: DecafParser.Statement_assignContext):
+        left = self.node_type[ctx.location()]
+        right = self.node_type[ctx.expr()]
+        result_type = self.VOID
+
+        if left != right:
+            result_type = self.ERROR
+            line = ctx.assign_op().start.line
+            col = ctx.assign_op().start.column
+            self.errores.Add(line, col, self.errores.ASIGNACION)
+        self.node_type[ctx] = result_type
 
     def exitExpr(self, ctx: DecafParser.ExprContext):
         nodes_nonterminals = []
@@ -257,7 +357,6 @@ class DecafPrinter(DecafListener):
             
             self.node_type[ctx] = self.node_type[non_terminal]
             
-        # TODO: IMPLEMENTAR LOGICA DE OPERACIONES
         else:
             tipo1 = self.node_type[ctx.getChild(0)]
             tipo2 = self.node_type[ctx.getChild(2)]
@@ -326,7 +425,7 @@ class DecafPrinter(DecafListener):
         self.tabla_methods.ToTable()
         
         for i, j in self.node_type.items():
-            if isinstance(i, DecafParser.ExprContext):
+            if isinstance(i, DecafParser.BlockContext):
                 print(i, j)
 
         self.errores.ToString()

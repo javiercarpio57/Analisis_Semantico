@@ -116,12 +116,12 @@ class DecafListener(ParseTreeListener):
         pass
 
 
-    # Enter a parse tree produced by DecafParser#statement_location.
-    def enterStatement_location(self, ctx:DecafParser.Statement_locationContext):
+    # Enter a parse tree produced by DecafParser#statement_assign.
+    def enterStatement_assign(self, ctx:DecafParser.Statement_assignContext):
         pass
 
-    # Exit a parse tree produced by DecafParser#statement_location.
-    def exitStatement_location(self, ctx:DecafParser.Statement_locationContext):
+    # Exit a parse tree produced by DecafParser#statement_assign.
+    def exitStatement_assign(self, ctx:DecafParser.Statement_assignContext):
         pass
 
 
@@ -149,15 +149,6 @@ class DecafListener(ParseTreeListener):
 
     # Exit a parse tree produced by DecafParser#statement_while.
     def exitStatement_while(self, ctx:DecafParser.Statement_whileContext):
-        pass
-
-
-    # Enter a parse tree produced by DecafParser#statement_equal.
-    def enterStatement_equal(self, ctx:DecafParser.Statement_equalContext):
-        pass
-
-    # Exit a parse tree produced by DecafParser#statement_equal.
-    def exitStatement_equal(self, ctx:DecafParser.Statement_equalContext):
         pass
 
 

@@ -118,7 +118,7 @@ DIGIT               : [0-9];
 
 //BOOL_LITERAL        : 'True' | 'False';
 
-STRING_LITERAL      : ('"' ( ALPHA )+ '"') | (APOSTROPHE ( ALPHA )+ APOSTROPHE);
+STRING_LITERAL      : ('"' ( ALPHA_NUM )+ '"') | (APOSTROPHE ( ALPHA_NUM )+ APOSTROPHE);
 
 ALPHA_NUM           : ALPHA | DIGIT;
 
@@ -161,11 +161,10 @@ return_type         : (var_type | VOID);
 
 block               : LCURLY (vardeclr | vardeclrs)* statement* RCURLY;
 
-statement           : location assign_op expr SEMICOLON? #statement_location
+statement           : location assign_op expr SEMICOLON? #statement_assign
                     | method_call #statement_methodcall
                     | IF LROUND expr RROUND block (ELSE block)? #statement_if
                     | WHILE LROUND expr RROUND block #statement_while
-                    | location EQUAL_OP expr SEMICOLON #statement_equal
                     | RETURN expr SEMICOLON #statement_return
                     | FOR var_id (EQUAL_OP int_literal)? COMMA ((var_id (EQUAL_OP int_literal)?) | int_literal) block #statement_for
                     | BREAK SEMICOLON #statement_break
