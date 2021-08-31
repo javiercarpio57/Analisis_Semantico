@@ -1,40 +1,27 @@
 class Program {
-	string a, f;
-	int b;
-	boolean c;
-	struct A
-	{
-		int a;
+	// struct Z {
+	// 	int f;
+	// };
+	// struct Y {
+	// 	struct Z m;
+	// };
+	struct X {
+		int y[5];
 	};
 
-	struct B
-	{
-		int b;
-		struct A c;
-	};
+	// int a[10];
 
-
-	int factorial(int n) {
-		if ((n==0) || (1==1))
-		{
-			int b;
-			b = 5;
-			return "A";
-		}
-		else
-		{
-			int b;
-			b = 10;
-			return n*factorial(n-1);
-		}
-
-	}
 
 	void main() {
-		string a;
-		// struct B g;
-		// g.c.a = 1;
-		a = "abc";
-		b = factorial(b);
+		struct X x[10];
+		// int b;
+		// b = 0;
+		// struct Y y;
+		// struct Y a[5];
+		// a[0] = 5;
+		x[0].y[0] = 2;
+		// y.y[0] = 1;
+		// a[0].y[0] = 1;
+		// a[b] = 0;
 	}
 }

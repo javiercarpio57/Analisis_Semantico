@@ -36,6 +36,45 @@ class TablaSimbolos():
         print(self.pretty_table)
         self.pretty_table.clear_rows()
 
+class TablaStruct():
+    def __init__(self):
+        self.pretty_table = PrettyTable()
+        self._symbols = []
+
+    def Add(self, parent, tipo, id, description):
+        self._symbols.append({
+            'Parent': parent,
+            'Tipo': tipo,
+            'Id': id,
+            'Description': description
+        })
+
+    def LookUp(self, variable):
+        for symbol in self._symbols:
+            if symbol['Id'] == variable:
+                return symbol
+        return 0
+
+    def ToTable(self):
+        self.pretty_table.field_names = ['Parent', 'Tipo', 'ID', 'Description']
+        for i in self._symbols:
+            self.pretty_table.add_row(list(i.values()))
+
+        print(' ** STRUCTS **')
+        print(self.pretty_table)
+        self.pretty_table.clear_rows()
+
+    def ExtractInfo(self, parent, scope, tabla_tipo):
+        for i in scope._symbols:
+            tipo = tabla_tipo.LookUp(i['Tipo'])
+            self.Add(parent, i['Tipo'], i['Id'], tipo['Description'])
+    
+    def GetChild(self, tipo, name):
+        for symbol in self._symbols:
+            if symbol['Parent'] in tipo and symbol['Id'] == name:
+                return symbol
+
+        return 0
 
 class TablaMetodos():
     def __init__(self):
@@ -67,28 +106,30 @@ class TablaMetodos():
         print(self.pretty_table)
         self.pretty_table.clear_rows()
 
-
-
 class TablaTipos():
     def __init__(self):
+        self.PRIMITIVE = 'primitive'
+        self.ARRAY = 'array'
+        self.STRUCT = 'struct'
+
         self._types = []
-        self.Add('int', 4)
-        self.Add('string', 2)
-        self.Add('boolean', 1)
-        self.Add('void', 0)
+        self.Add('int', 4, self.PRIMITIVE)
+        self.Add('string', 2, self.PRIMITIVE)
+        self.Add('boolean', 1, self.PRIMITIVE)
+        self.Add('void', 0, self.PRIMITIVE)
         print(' -- INICIANDO TABLA TIPOS --')
 
-    def Add(self, tipo, size):
+    def Add(self, tipo, size, description):
         self._types.append({
             'Tipo': tipo,
             'Size': size,
+            'Description': description
         })
 
     def LookUp(self, tipo):
         for type in self._types:
             if type['Tipo'] == tipo:
                 return type
-
         return 0
 
 class SemanticError():
@@ -99,12 +140,14 @@ class SemanticError():
         self.NUMERO_PARAMETROS_METODO = 'El número de argumentos en la llamada al método no coincide.'
         self.TIPO_PARAMETROS_METODO = 'El tipo de dato en los argumentos en la llamada al método no coincide.'
         self.EQ_OPS = 'El tipo de dato de operandos no es el mismo para los operadores "==" y "!=".'
-        self.ARITH_OP = 'El tipo de dato de operandos no es el mismo para los operadores "==" y "!=".'
-        self.REL_OP = 'El tipo de dato de operandos no es el mismo para los operadores "==" y "!=".'
+        self.ARITH_OP = 'El tipo de dato de operando debe ser INT para operadores aritméticos.'
+        self.REL_OP = 'El tipo de dato de operando debe ser INT para operadores de relación.'
         self.COND_OP = 'El tipo de dato en operación condicional debe ser boolean.'
         self.IF_BOOLEAN = 'El tipo de dato dentro de condición de IF debe ser boolean.'
         self.ASIGNACION = 'La asignación de dos valores deben ser del mismo tipo.'
         self.RETURN_TYPE = 'El valor de retorno debe de ser del mismo tipo con que fue declarado el método.'
+        self.RETURN_VOID = 'Un método declarado VOID no puede retornar ningún valor.'
+        self.MUST_STRUCT = 'El tipo de dato de la variable debe ser STRUCT.'
 
     def Add(self, line, col, msg):
         self.errores.append({

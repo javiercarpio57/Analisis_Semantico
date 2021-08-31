@@ -139,11 +139,9 @@ NEWLINE				: ('\r'? '\n' | '\r')+ -> skip;
 
 program		        : CLASS PROGRAM LCURLY (declaration)* RCURLY;
 
-declaration         : struct_declr | vardeclr | vardeclrs | method_declr | field_declr ;
+declaration         : struct_declr | vardeclr | method_declr | field_declr ;
 
 vardeclr            : var_type field_var SEMICOLON;
-
-vardeclrs           : (var_type field_var) (COMMA var_type field_var)* SEMICOLON;
 
 field_declr         : var_type field_var (COMMA field_var)* SEMICOLON;
 
@@ -153,13 +151,13 @@ field_var           : var_id | array_id;
 
 var_id              : ID (POINT location)?;
 
-struct_declr        : STRUCT ID LCURLY (vardeclr | vardeclrs)* RCURLY SEMICOLON;
+struct_declr        : STRUCT ID LCURLY (vardeclr)* RCURLY SEMICOLON;
 
 method_declr        : return_type method_name LROUND (((var_type var_id) | VOID) (COMMA var_type var_id)*)? RROUND block;
 
 return_type         : (var_type | VOID);
 
-block               : LCURLY (vardeclr | vardeclrs)* statement* RCURLY;
+block               : LCURLY (vardeclr)* statement* RCURLY;
 
 statement           : location assign_op expr SEMICOLON? #statement_assign
                     | method_call #statement_methodcall
