@@ -10,15 +10,17 @@ from utilities import *
 import sys
 
 class DecafPrinter(DecafListener):
-    def __init__(self) -> None:
-        self.STRING = 'string'
+    def __init__(self):
+        self.root = None
+        
+        self.STRING = 'char'
         self.INT = 'int'
         self.BOOLEAN = 'boolean'
         self.VOID = 'void'
         self.ERROR = 'error'
 
         self.data_type = {
-            'string': self.STRING,
+            'char': self.STRING,
             'int': self.INT,
             'boolean': self.BOOLEAN,
             'void': self.VOID,
@@ -47,7 +49,9 @@ class DecafPrinter(DecafListener):
     def Find(self, var):
         lookup = self.current_scope.LookUp(var)
         if lookup == 0:
-            for scope in self.ambitos:
+            ambitos_reverse = self.ambitos.copy()
+            ambitos_reverse.reverse()
+            for scope in ambitos_reverse:
                 lookup2 = scope.LookUp(var)
                 if lookup2 != 0:
                     return lookup2
@@ -63,13 +67,14 @@ class DecafPrinter(DecafListener):
         return next(g, True) and not next(g, False)
 
     def ChildrenHasError(self, ctx):
-        non_terminals = [self.node_type[i] for i in ctx.children if type(i) in [DecafParser.LocationContext, DecafParser.ExprContext, DecafParser.BlockContext]]
+        non_terminals = [self.node_type[i] for i in ctx.children if type(i) in [DecafParser.LocationContext, DecafParser.ExprContext, DecafParser.BlockContext, DecafParser.DeclarationContext]]
         if self.ERROR in non_terminals:
             return True
         return False
 
     def enterProgram(self, ctx: DecafParser.ProgramContext):
         print('---------- INICIO --------------')
+        self.root = ctx
         self.current_scope = TablaSimbolos()
 
     def enterMethod_declr(self, ctx: DecafParser.Method_declrContext):
@@ -111,12 +116,8 @@ class DecafPrinter(DecafListener):
 
         return_type = ctx.return_type().getText()
         block_type = self.node_type[ctx.block()]
-        
-        if block_type == self.ERROR:
-            self.node_type[ctx] = self.ERROR
-            return
 
-        if return_type == self.VOID and block_type != self.VOID:
+        if return_type == self.VOID and block_type != self.VOID and block_type != self.ERROR:
             self.node_type[ctx] = self.ERROR
             line = ctx.return_type().start.line
             col = ctx.return_type().start.column
@@ -124,10 +125,16 @@ class DecafPrinter(DecafListener):
             return
 
         if return_type != block_type:
+            if block_type == self.ERROR:
+                self.node_type[ctx] = self.ERROR
+                return
+            
             self.node_type[ctx] = self.ERROR
             line = ctx.block().start.line
             col = ctx.block().start.column
             self.errores.Add(line, col, self.errores.RETURN_TYPE)
+
+        self.node_type[ctx] = self.VOID
         print('Saliendo metodo', method)
 
     def enterVardeclr(self, ctx: DecafParser.VardeclrContext):
@@ -248,7 +255,15 @@ class DecafPrinter(DecafListener):
                     self.errores.Add(line, col, f'Variable "{id}" debe ser un array.')
                     self.node_type[ctx] = self.ERROR
             elif ctx.var_id() is not None:
-                tipo_var = self.current_scope.LookUp(ctx.var_id().getText())
+                tipo_var = self.Find(ctx.var_id().getText())
+                print('TIPO VAR', tipo_var)
+                if tipo_var == 0:
+                    # line = ctx.start.line
+                    # col = ctx.start.column
+                    # self.errores.Add(line, col, f'Variable "{ctx.var_id().getText()}" no ha sido declarada previamente.')
+                    self.node_type[ctx] = self.ERROR
+                    return
+
                 if 'array' in tipo and tipo_var['Tipo'] == self.INT:
                     if tipo.split('array')[-1] in [self.INT, self.STRING, self.BOOLEAN]:
                         self.node_type[ctx] = self.data_type[tipo.split('array')[-1]]
@@ -360,14 +375,23 @@ class DecafPrinter(DecafListener):
             if isinstance(child, DecafParser.ExprContext):
                 parameters.append(child)
 
-        print('METHOD CALL', name, len(parameters))
         method_info = self.tabla_methods.LookUp(name)
+        if method_info == 0:
+            self.node_type[ctx] = self.ERROR
+            line = ctx.method_name().start.line
+            col = ctx.method_name().start.column
+            self.errores.Add(line, col, f'El método "{name}" no existe o no hay definición del método previamente a ser invocado.')
+            return
 
         if len(parameters) != len(method_info['Parameters']):
             self.node_type[ctx] = self.ERROR
             line = ctx.method_name().start.line
             col = ctx.method_name().start.column
             self.errores.Add(line, col, self.errores.NUMERO_PARAMETROS_METODO)
+            return
+
+        if len(parameters) == 0:
+            self.node_type[ctx] = method_info['Tipo']
             return
 
         hasError = False
@@ -423,7 +447,7 @@ class DecafPrinter(DecafListener):
             self.node_type[ctx] = self.ERROR
             line = ctx.expr().start.line
             col = ctx.expr().start.column
-            self.errores.Add(line, col, self.errores.IF_BOOLEAN)
+            self.errores.Add(line, col, self.errores.WHILE_BOOLEAN)
             return
 
         hijos_tipo = [self.node_type[i] for i in ctx.children if isinstance(i, DecafParser.BlockContext)]
@@ -481,7 +505,8 @@ class DecafPrinter(DecafListener):
             non_terminal = nodes_nonterminals.pop()
             
             self.node_type[ctx] = self.node_type[non_terminal]
-            
+        # elif len(nodes_nonterminals) == 0:
+        #     self.node_type[ctx] = self.VOID
         else:
             tipo1 = self.node_type[ctx.getChild(0)]
             tipo2 = self.node_type[ctx.getChild(2)]
@@ -501,6 +526,8 @@ class DecafPrinter(DecafListener):
             elif ctx.arith_op() is not None or ctx.rel_op() is not None:
                 if tipo1 == self.INT and tipo2 == self.INT:
                     result_type = self.INT
+                    if ctx.rel_op() is not None:
+                        result_type = self.BOOLEAN
                 else:
                     hasError = True
                     if tipo1 != self.INT:
@@ -545,6 +572,7 @@ class DecafPrinter(DecafListener):
                 if 'struct' in description:
                     child = self.tabla_struct.GetChild(parent_type, id)
                     if child == 0:
+                        self.node_type[location] = self.ERROR
                         line = location.start.line
                         col = location.start.column
                         self.errores.Add(line, col, f'Variable "{id}" no ha sido declarada previamente.')
@@ -577,7 +605,7 @@ class DecafPrinter(DecafListener):
                     child_type = child['Tipo']
                     child_desc = child['Description']
                     tipo_nodo = self.tabla_tipos.LookUp(child['Tipo'])
-                    # print(tipo_nodo)
+                    print('****************************', id, child, tipo_nodo)
             else:
                 line = location.start.line
                 col = location.start.column
@@ -595,7 +623,9 @@ class DecafPrinter(DecafListener):
                 id = location.array_id().getChild(0).getText()
                 if 'struct' in description:
                     child = self.tabla_struct.GetChild(parent_type, id)
+                    print('--', id, parent_type, child, '--')
                     if child == 0:
+                        self.node_type[location] = self.ERROR
                         line = location.start.line
                         col = location.start.column
                         self.errores.Add(line, col, f'Variable "{id}" no ha sido declarada previamente.')
@@ -629,12 +659,12 @@ class DecafPrinter(DecafListener):
                     child_type = child['Tipo']
                     child_desc = child['Description']
                     tipo_nodo = self.tabla_tipos.LookUp(child['Tipo'])
-                    # print(tipo_nodo)
             else:
                 line = location.start.line
                 col = location.start.column
                 self.errores.Add(line, col, self.errores.MUST_STRUCT)
 
+            print('****************************', id, child, tipo_nodo)
             result_type = self.IterateChildren(location.array_id().location(), child_type, child_desc)
             self.node_type[location] = result_type
             return result_type
@@ -653,11 +683,11 @@ class DecafPrinter(DecafListener):
             if ctx.var_id().location() is not None:
                 print('------------ LOCATION ENTRADA -------------------')
                 id = ctx.var_id().getChild(0).getText()
-                # print(id)
+                print(id)
                 symbol = self.Find(id)
-                # print(symbol)
+                print(symbol)
                 tipo_id = self.tabla_tipos.LookUp(symbol['Tipo'])
-                # print(tipo_id)
+                print(tipo_id)
                 # children = self.tabla_struct.GetChild(symbol['Tipo'], id)
                 # print(children)
                 result_type = self.IterateChildren(ctx.var_id().location(), tipo_id['Tipo'], tipo_id['Description'])
@@ -684,43 +714,75 @@ class DecafPrinter(DecafListener):
         if ctx not in self.node_type.keys():
             self.node_type[ctx] = self.node_type[ctx.getChild(0)]
 
-    def exitProgram(self, ctx: DecafParser.ProgramContext):
-        self.current_scope.ToTable()
-        print('---------- FIN --------------')
+    def exitDeclaration(self, ctx: DecafParser.DeclarationContext):
+        self.node_type[ctx] = self.node_type[ctx.getChild(0)]
 
+    def exitProgram(self, ctx: DecafParser.ProgramContext):
         main_method = self.tabla_methods.LookUp('main')
         if main_method != 0:
             if len(main_method['Parameters']) > 0:
-                self.errores.Add(0, 0, self.errores.MAIN_PARAMETERLESS)    
+                self.node_type[ctx] = self.ERROR
+                self.errores.Add(0, 0, self.errores.MAIN_PARAMETERLESS)   
+            else:
+                hasError = self.ChildrenHasError(ctx)
+                if hasError:
+                    self.node_type[ctx] = self.ERROR
+                else:
+                    self.node_type[ctx] = self.VOID
         else:
+            self.node_type[ctx] = self.ERROR
             self.errores.Add(0, 0, self.errores.MAIN_PARAMETERLESS)
 
+
+        self.current_scope.ToTable()
+        print('---------- FIN --------------')
+
+
         self.tabla_methods.ToTable()
-        
-        for i, j in self.node_type.items():
-            if isinstance(i, DecafParser.LocationContext):
-                print(i, j)
+        # for i, j in self.node_type.items():
+        #     if isinstance(i, DecafParser.Method_declrContext):
+        #         print(i, j)
 
         # print(self.node_type)
         self.tabla_struct.ToTable()
-        self.errores.ToString()
+
+        if self.node_type[ctx] == self.ERROR:
+            self.errores.ToString()
+        # else:
+        #     print('NO HAY ERRORES. TODO BIEN TODO CORRECTO.')
 
 
+class Compilar():
+    def __init__(self, url):
+        self.printer = None
 
-def main():
-    if len(sys.argv) >= 2:
-        input = FileStream(sys.argv[1])
+        input = FileStream(url)
         lexer = DecafLexer(input)
         stream = CommonTokenStream(lexer)
         parser = DecafParser(stream)
         tree = parser.program()
 
-        printer = DecafPrinter()
+        self.printer = DecafPrinter()
         walker = ParseTreeWalker()
-        walker.walk(printer, tree)
-    else:
-        print('No se ingresó un archivo como parámetro.')
-        print('Ej. python proyecto2.py suma.decaf')
+        walker.walk(self.printer, tree)
 
+# def main():
+#     if len(sys.argv) >= 2:
+#         print('INPUT')
+#         print(input)
+#         lexer = DecafLexer(input)
+#         stream = CommonTokenStream(lexer)
+#         parser = DecafParser(stream)
+#         tree = parser.program()
 
-main()
+#         printer = DecafPrinter()
+#         walker = ParseTreeWalker()
+#         walker.walk(printer, tree)
+#         # print('ROOT', printer.node_type[printer.root])
+#         # print(printer.errores.GetErrores())
+#     else:
+#         print('No se ingresó un archivo como parámetro.')
+#         print('Ej. python proyecto2.py suma.decaf')
+
+# a = Compilar('fact_array.decaf')
+# main()

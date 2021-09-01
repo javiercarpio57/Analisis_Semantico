@@ -35,15 +35,6 @@ class DecafListener(ParseTreeListener):
         pass
 
 
-    # Enter a parse tree produced by DecafParser#vardeclrs.
-    def enterVardeclrs(self, ctx:DecafParser.VardeclrsContext):
-        pass
-
-    # Exit a parse tree produced by DecafParser#vardeclrs.
-    def exitVardeclrs(self, ctx:DecafParser.VardeclrsContext):
-        pass
-
-
     # Enter a parse tree produced by DecafParser#field_declr.
     def enterField_declr(self, ctx:DecafParser.Field_declrContext):
         pass

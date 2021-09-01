@@ -37,16 +37,6 @@ public interface DecafListener extends ParseTreeListener {
 	 */
 	void exitVardeclr(DecafParser.VardeclrContext ctx);
 	/**
-	 * Enter a parse tree produced by {@link DecafParser#vardeclrs}.
-	 * @param ctx the parse tree
-	 */
-	void enterVardeclrs(DecafParser.VardeclrsContext ctx);
-	/**
-	 * Exit a parse tree produced by {@link DecafParser#vardeclrs}.
-	 * @param ctx the parse tree
-	 */
-	void exitVardeclrs(DecafParser.VardeclrsContext ctx);
-	/**
 	 * Enter a parse tree produced by {@link DecafParser#field_declr}.
 	 * @param ctx the parse tree
 	 */

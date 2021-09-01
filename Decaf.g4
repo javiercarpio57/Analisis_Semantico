@@ -36,8 +36,6 @@ CHAR                : 'char';
 
 INT                 : 'int';
 
-STRING              : 'string';
-
 TRUE                : 'True';
 
 FALSE               : 'False';
@@ -118,7 +116,7 @@ DIGIT               : [0-9];
 
 //BOOL_LITERAL        : 'True' | 'False';
 
-STRING_LITERAL      : ('"' ( ALPHA_NUM )+ '"') | (APOSTROPHE ( ALPHA_NUM )+ APOSTROPHE);
+STRING_LITERAL      : ('"' ( ALPHA_NUM ) '"') | (APOSTROPHE ( ALPHA_NUM ) APOSTROPHE);
 
 ALPHA_NUM           : ALPHA | DIGIT;
 
@@ -198,7 +196,7 @@ literal             : int_literal | string_literal | bool_literal;
 
 arith_op            : ADD | SUB | MULTIPLY | DIVIDE | REMINDER;
 
-var_type            : INT | STRING | BOOLEAN | STRUCT ID | struct_declr ;
+var_type            : INT | CHAR | BOOLEAN | STRUCT ID | struct_declr ;
 
 assign_op           : EQUAL_OP
                     | ADD_eq_op

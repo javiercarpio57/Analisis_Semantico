@@ -1,27 +1,36 @@
-class Program {
-	// struct Z {
-	// 	int f;
-	// };
-	// struct Y {
-	// 	struct Z m;
-	// };
-	struct X {
-		int y[5];
+class Program
+{
+	struct A
+	{
+		int a;
 	};
 
-	// int a[10];
+	struct B
+	{
+		int b;
+		struct A c;
+	};
 
 
-	void main() {
-		struct X x[10];
-		// int b;
-		// b = 0;
-		// struct Y y;
-		// struct Y a[5];
-		// a[0] = 5;
-		x[0].y[0] = 2;
-		// y.y[0] = 1;
-		// a[0].y[0] = 1;
-		// a[b] = 0;
+	int factorial(int n)
+	{
+		if (n==0)
+		{
+			return 1;
+		}
+		else
+		{
+			return n*factorial(n-1);
+		}
+
 	}
+
+	void main(void)
+	{
+		struct B y;
+		y.b = 5;
+		y.c.a = factorial(y.b);
+	}
+
+
 }

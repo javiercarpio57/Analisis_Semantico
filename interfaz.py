@@ -5,27 +5,47 @@ from PyQt5.QtCore import *
 import os
 import sys
 
+from proyecto2 import Compilar
+
+
 # Creating main window class
 class MainWindow(QMainWindow):
 
 	# constructor
 	def __init__(self, *args, **kwargs):
+		self.content_editor = ''
 		super(MainWindow, self).__init__(*args, **kwargs)
 		# self.setGeometry(1200, 800)
 
 		# setting window geometry
 		self.setGeometry(100, 100, 1200, 800)
 		# self.setAcceptDrops(True)
+		# setting font to the editor
+		fixedfont = QFontDatabase.systemFont(QFontDatabase.FixedFont)
+		fixedfont.setPointSize(10)
 
 		# creating a layout
-		layout = QVBoxLayout()
+		mainlayout = QVBoxLayout()
+
+		# Initialize tab screen
+		self.tabs = QTabWidget()
+		self.tab1 = QWidget()
+		self.tab2 = QWidget()
+
+		# # Add tabs
+		self.tabs.addTab(self.tab1, "Text Editor")
+		self.tabs.addTab(self.tab2, "Results")
 
 		# creating a QPlainTextEdit object
 		self.editor = QPlainTextEdit()
 
-		# setting font to the editor
-		fixedfont = QFontDatabase.systemFont(QFontDatabase.FixedFont)
-		fixedfont.setPointSize(12)
+		self.showErrors = QLabel()
+		self.showErrors.setFont(fixedfont)
+		self.showErrors.setText("")
+		self.tab2.layout = QVBoxLayout()
+		self.tab2.layout.addWidget(self.showErrors)
+		self.tab2.setLayout(self.tab2.layout)
+
 		self.editor.setFont(fixedfont)
 
 		# self.path holds the path of the currently open file.
@@ -33,13 +53,17 @@ class MainWindow(QMainWindow):
 		self.path = None
 
 		# adding editor to the layout
-		layout.addWidget(self.editor)
+		mainlayout.addWidget(self.tabs)
+		# layout.addWidget(self.editor)
+		self.tab1.layout = QVBoxLayout()
+		self.tab1.layout.addWidget(self.editor)
+		self.tab1.setLayout(self.tab1.layout)
 
 		# creating a QWidget layout
 		container = QWidget()
 
 		# setting layout to the container
-		container.setLayout(layout)
+		container.setLayout(mainlayout)
 
 		# making container as central widget
 		self.setCentralWidget(container)
@@ -80,6 +104,11 @@ class MainWindow(QMainWindow):
 		saveas_file_action.setStatusTip("Save current page to specified file")
 		saveas_file_action.triggered.connect(self.file_saveas)
 		file_toolbar.addAction(saveas_file_action)
+
+		compile_action = QAction("Compile", self)
+		compile_action.setStatusTip("Compile current program")
+		compile_action.triggered.connect(self.compile)
+		file_toolbar.addAction(compile_action)
 
 		# creating another tool bar for editing text
 		edit_toolbar = QToolBar("Edit")
@@ -186,17 +215,6 @@ class MainWindow(QMainWindow):
 		# showing it
 		dlg.show()
 
-	# def dragEnterEvent(self, event):
-	# 	if event.mimeData().hasUrls():
-	# 		event.accept()
-	# 	else:
-	# 		event.ignore()
-
-	# def dropEvent(self, event):
-	# 	files = [u.toLocalFile() for u in event.mimeData().urls()]
-	# 	for f in files:
-	# 		print(f)
-
 	# action called by file open action
 	def file_open(self):
 
@@ -256,6 +274,20 @@ class MainWindow(QMainWindow):
 		# else call save to path method
 		self._save_to_path(path)
 
+	def compile(self):
+		print('COMPILANDO...')
+		input = self.path
+		
+		if self.editor.toPlainText() != '':
+			compilado = Compilar(input)
+			if compilado.printer.node_type[compilado.printer.root] == 'error':
+				# print(compilado.printer.errores.GetErrores())
+				errores = '\n'.join(compilado.printer.errores.GetErrores())
+				self.showErrors.setText(errores)
+			else:
+				self.showErrors.setText('Sin errores :)')
+			self.tabs.setCurrentIndex(1)
+
 	# save to path method
 	def _save_to_path(self, path):
 
@@ -286,30 +318,15 @@ class MainWindow(QMainWindow):
 
 	# update title method
 	def update_title(self):
-
-		# setting window title with prefix as file name
-		# suffix aas PyQt5 Notepad
 		self.setWindowTitle("%s - PyQt5 Notepad" %(os.path.basename(self.path)
 												if self.path else "Untitled"))
 
-	# action called by edit toggle
 	def edit_toggle_wrap(self):
-
-		# chaning line wrap mode
 		self.editor.setLineWrapMode(1 if self.editor.lineWrapMode() == 0 else 0 )
 
 
-# drivers code
 if __name__ == '__main__':
-
-	# creating PyQt5 application
 	app = QApplication(sys.argv)
-
-	# setting application name
 	app.setApplicationName("PyQt5-Note")
-
-	# creating a main window object
 	window = MainWindow()
-
-	# loop
 	app.exec_()

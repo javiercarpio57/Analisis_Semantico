@@ -70,7 +70,9 @@ class TablaStruct():
             self.Add(parent, i['Tipo'], i['Id'], tipo['Description'])
     
     def GetChild(self, tipo, name):
-        for symbol in self._symbols:
+        copy_symbols = self._symbols.copy()
+        copy_symbols.reverse()
+        for symbol in copy_symbols:
             if symbol['Parent'] in tipo and symbol['Id'] == name:
                 return symbol
 
@@ -114,7 +116,7 @@ class TablaTipos():
 
         self._types = []
         self.Add('int', 4, self.PRIMITIVE)
-        self.Add('string', 2, self.PRIMITIVE)
+        self.Add('char', 2, self.PRIMITIVE)
         self.Add('boolean', 1, self.PRIMITIVE)
         self.Add('void', 0, self.PRIMITIVE)
         print(' -- INICIANDO TABLA TIPOS --')
@@ -144,10 +146,12 @@ class SemanticError():
         self.REL_OP = 'El tipo de dato de operando debe ser INT para operadores de relación.'
         self.COND_OP = 'El tipo de dato en operación condicional debe ser boolean.'
         self.IF_BOOLEAN = 'El tipo de dato dentro de condición de IF debe ser boolean.'
+        self.WHILE_BOOLEAN = 'El tipo de dato dentro de condición de WHILE debe ser boolean.'
         self.ASIGNACION = 'La asignación de dos valores deben ser del mismo tipo.'
         self.RETURN_TYPE = 'El valor de retorno debe de ser del mismo tipo con que fue declarado el método.'
         self.RETURN_VOID = 'Un método declarado VOID no puede retornar ningún valor.'
         self.MUST_STRUCT = 'El tipo de dato de la variable debe ser STRUCT.'
+        self.METHOD_NOT_DECLARED = 'El método no existe o no hay definición del método previamente a ser invocado.'
 
     def Add(self, line, col, msg):
         self.errores.append({
@@ -159,3 +163,9 @@ class SemanticError():
     def ToString(self):
         for error in self.errores:
             print(' => Line ' + str(error['Line']) + ':' + str(error['Col']) + ' ' + error['Msg'])
+
+    def GetErrores(self):
+        errors = []
+        for error in self.errores:
+            errors.append(' => Line ' + str(error['Line']) + ':' + str(error['Col']) + ' ' + error['Msg'])
+        return errors

@@ -51,18 +51,6 @@ public class DecafBaseListener implements DecafListener {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterVardeclrs(DecafParser.VardeclrsContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void exitVardeclrs(DecafParser.VardeclrsContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
 	@Override public void enterField_declr(DecafParser.Field_declrContext ctx) { }
 	/**
 	 * {@inheritDoc}
