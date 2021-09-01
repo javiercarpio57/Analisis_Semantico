@@ -277,7 +277,7 @@ class MainWindow(QMainWindow):
 	def compile(self):
 		print('COMPILANDO...')
 		input = self.path
-		
+
 		if self.editor.toPlainText() != '':
 			compilado = Compilar(input)
 			if compilado.printer.node_type[compilado.printer.root] == 'error':
@@ -318,7 +318,7 @@ class MainWindow(QMainWindow):
 
 	# update title method
 	def update_title(self):
-		self.setWindowTitle("%s - PyQt5 Notepad" %(os.path.basename(self.path)
+		self.setWindowTitle("%s" %(os.path.basename(self.path)
 												if self.path else "Untitled"))
 
 	def edit_toggle_wrap(self):

@@ -167,7 +167,6 @@ class DecafPrinter(DecafListener):
                 if ctx.field_var().array_id().int_literal() is not None:
                     size = int(ctx.field_var().array_id().int_literal().getText())
 
-                print('ARRAY DCLR', tipo_array, id, size)
                 if 'struct' in tipo_array:
                     self.tabla_tipos.Add(tipo_array, size, self.tabla_tipos.ARRAY + self.tabla_tipos.STRUCT)
                 else:
@@ -256,7 +255,6 @@ class DecafPrinter(DecafListener):
                     self.node_type[ctx] = self.ERROR
             elif ctx.var_id() is not None:
                 tipo_var = self.Find(ctx.var_id().getText())
-                print('TIPO VAR', tipo_var)
                 if tipo_var == 0:
                     # line = ctx.start.line
                     # col = ctx.start.column
@@ -318,15 +316,12 @@ class DecafPrinter(DecafListener):
                     break
 
     def exitVardeclr(self, ctx: DecafParser.VardeclrContext):
-        # if ctx.field_var().var_id() is not None:
         self.node_type[ctx] = self.VOID
         for child in ctx.children:
             if not isinstance(child, TerminalNode):
                 if self.node_type[child] == self.ERROR:
                     self.node_type[ctx] = self.ERROR
                     break
-        # elif ctx.field_var().array_id() is not None:
-        #     print('DECLARACION DE UN ARRAY')
 
     def exitString_literal(self, ctx: DecafParser.String_literalContext):
         self.node_type[ctx] = self.STRING
@@ -568,7 +563,6 @@ class DecafPrinter(DecafListener):
             if location.var_id().location() is None:
                 tipo_retorno = self.ERROR
                 id = location.var_id().getChild(0).getText()
-                # print(id, parent_type, description)
                 if 'struct' in description:
                     child = self.tabla_struct.GetChild(parent_type, id)
                     if child == 0:
@@ -578,7 +572,6 @@ class DecafPrinter(DecafListener):
                         self.errores.Add(line, col, f'Variable "{id}" no ha sido declarada previamente.')
                     else:
                         tipo_nodo = self.tabla_tipos.LookUp(child['Tipo'])
-                        # print(tipo_nodo)
                         tipo_retorno = tipo_nodo['Tipo']
                         self.node_type[location] = tipo_nodo['Tipo']
                 else:
@@ -590,7 +583,6 @@ class DecafPrinter(DecafListener):
             
             print('----------------------------------------------------------------------------------------')
             id = location.var_id().getChild(0).getText()
-            # print(id)
             tipo_nodo = None
             child_type = None
             child_desc = None
@@ -605,7 +597,6 @@ class DecafPrinter(DecafListener):
                     child_type = child['Tipo']
                     child_desc = child['Description']
                     tipo_nodo = self.tabla_tipos.LookUp(child['Tipo'])
-                    print('****************************', id, child, tipo_nodo)
             else:
                 line = location.start.line
                 col = location.start.column
@@ -623,7 +614,6 @@ class DecafPrinter(DecafListener):
                 id = location.array_id().getChild(0).getText()
                 if 'struct' in description:
                     child = self.tabla_struct.GetChild(parent_type, id)
-                    print('--', id, parent_type, child, '--')
                     if child == 0:
                         self.node_type[location] = self.ERROR
                         line = location.start.line
@@ -631,7 +621,6 @@ class DecafPrinter(DecafListener):
                         self.errores.Add(line, col, f'Variable "{id}" no ha sido declarada previamente.')
                     else:
                         tipo_nodo = self.tabla_tipos.LookUp(child['Tipo'])
-                        # print(tipo_nodo)
                         tipo_retorno = tipo_nodo['Tipo'].split('array')[-1]
                         self.node_type[location] = tipo_nodo['Tipo'].split('array')[-1]
                 else:
@@ -643,14 +632,12 @@ class DecafPrinter(DecafListener):
             
             print('----------------------------------------------------------------------------------------')
             id = location.array_id().getChild(0).getText()
-            # print(id)
             tipo_nodo = None
             child_type = None
             child_desc = None
 
             if 'struct' in description:
                 child = self.tabla_struct.GetChild(parent_type, id)
-                print('ITERATE CHILDREN 2', child)
                 if child == 0:
                     line = location.start.line
                     col = location.start.column
@@ -664,7 +651,6 @@ class DecafPrinter(DecafListener):
                 col = location.start.column
                 self.errores.Add(line, col, self.errores.MUST_STRUCT)
 
-            print('****************************', id, child, tipo_nodo)
             result_type = self.IterateChildren(location.array_id().location(), child_type, child_desc)
             self.node_type[location] = result_type
             return result_type
@@ -683,13 +669,8 @@ class DecafPrinter(DecafListener):
             if ctx.var_id().location() is not None:
                 print('------------ LOCATION ENTRADA -------------------')
                 id = ctx.var_id().getChild(0).getText()
-                print(id)
                 symbol = self.Find(id)
-                print(symbol)
                 tipo_id = self.tabla_tipos.LookUp(symbol['Tipo'])
-                print(tipo_id)
-                # children = self.tabla_struct.GetChild(symbol['Tipo'], id)
-                # print(children)
                 result_type = self.IterateChildren(ctx.var_id().location(), tipo_id['Tipo'], tipo_id['Description'])
                 self.node_type[ctx] = result_type
                 print('------------ LOCATION SALIDA -------------------', result_type)
@@ -698,14 +679,8 @@ class DecafPrinter(DecafListener):
             if ctx.array_id().location() is not None:
                 print('------------ LOCATION ENTRADA -------------------')
                 id = ctx.array_id().getChild(0).getText()
-                print(id)
                 symbol = self.Find(id)
-                print(symbol)
                 tipo_id = self.tabla_tipos.LookUp(symbol['Tipo'])
-                print(tipo_id)
-                print('ITERATE CHILDREN location')
-                # children = self.tabla_struct.GetChild(symbol['Tipo'], id)
-                # print(children)
                 result_type = self.IterateChildren(ctx.array_id().location(), tipo_id['Tipo'], tipo_id['Description'])
                 self.node_type[ctx] = result_type
                 print('------------ LOCATION SALIDA -------------------', result_type)
@@ -739,17 +714,7 @@ class DecafPrinter(DecafListener):
 
 
         self.tabla_methods.ToTable()
-        # for i, j in self.node_type.items():
-        #     if isinstance(i, DecafParser.Method_declrContext):
-        #         print(i, j)
-
-        # print(self.node_type)
         self.tabla_struct.ToTable()
-
-        if self.node_type[ctx] == self.ERROR:
-            self.errores.ToString()
-        # else:
-        #     print('NO HAY ERRORES. TODO BIEN TODO CORRECTO.')
 
 
 class Compilar():
@@ -765,24 +730,3 @@ class Compilar():
         self.printer = DecafPrinter()
         walker = ParseTreeWalker()
         walker.walk(self.printer, tree)
-
-# def main():
-#     if len(sys.argv) >= 2:
-#         print('INPUT')
-#         print(input)
-#         lexer = DecafLexer(input)
-#         stream = CommonTokenStream(lexer)
-#         parser = DecafParser(stream)
-#         tree = parser.program()
-
-#         printer = DecafPrinter()
-#         walker = ParseTreeWalker()
-#         walker.walk(printer, tree)
-#         # print('ROOT', printer.node_type[printer.root])
-#         # print(printer.errores.GetErrores())
-#     else:
-#         print('No se ingresó un archivo como parámetro.')
-#         print('Ej. python proyecto2.py suma.decaf')
-
-# a = Compilar('fact_array.decaf')
-# main()
