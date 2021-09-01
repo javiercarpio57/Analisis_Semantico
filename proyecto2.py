@@ -1,6 +1,7 @@
 from prettytable.prettytable import NONE
 from antlr4 import *
 from antlr4.tree.Trees import TerminalNode
+from antlr4.error.ErrorListener import ErrorListener
 from DecafLexer import DecafLexer
 from DecafListener import DecafListener
 from DecafParser import DecafParser
@@ -8,6 +9,20 @@ from itertools import groupby
 from utilities import *
 
 import sys
+
+class MyErrorListener(ErrorListener):
+    def __init__(self):
+        self.hasErrors = False
+        self.lexicalErrors = []
+        pass
+
+    def syntaxError(self, recognizer, offendingSymbol, line, column, msg, e):
+        self.hasErrors = True
+        errorMsg = f' => Line {line}:{column} {msg}'
+        self.lexicalErrors.append(errorMsg)
+
+    def getHasError(self):
+        return self.hasErrors
 
 class DecafPrinter(DecafListener):
     def __init__(self):
@@ -725,8 +740,16 @@ class Compilar():
         lexer = DecafLexer(input)
         stream = CommonTokenStream(lexer)
         parser = DecafParser(stream)
+        self.myError = MyErrorListener()
+        parser.removeErrorListeners()
+        parser.addErrorListener(self.myError)
         tree = parser.program()
 
-        self.printer = DecafPrinter()
-        walker = ParseTreeWalker()
-        walker.walk(self.printer, tree)
+        # print('HAS ERROR?', self.myError.getHasError())
+        if not self.myError.getHasError():
+            self.printer = DecafPrinter()
+            walker = ParseTreeWalker()
+            walker.walk(self.printer, tree)
+
+    def HasLexicalError(self):
+        return self.myError.getHasError()

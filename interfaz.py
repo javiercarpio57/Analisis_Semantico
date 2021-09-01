@@ -280,12 +280,19 @@ class MainWindow(QMainWindow):
 
 		if self.editor.toPlainText() != '':
 			compilado = Compilar(input)
-			if compilado.printer.node_type[compilado.printer.root] == 'error':
-				# print(compilado.printer.errores.GetErrores())
-				errores = '\n'.join(compilado.printer.errores.GetErrores())
+
+			if compilado.HasLexicalError():
+				print('tiene errores lexicos', compilado.myError.lexicalErrors)
+				errores = '\n'.join(compilado.myError.lexicalErrors)
 				self.showErrors.setText(errores)
+				
 			else:
-				self.showErrors.setText('Sin errores :)')
+				if compilado.printer.node_type[compilado.printer.root] == 'error':
+					# print(compilado.printer.errores.GetErrores())
+					errores = '\n'.join(compilado.printer.errores.GetErrores())
+					self.showErrors.setText(errores)
+				else:
+					self.showErrors.setText('Sin errores :)')
 			self.tabs.setCurrentIndex(1)
 
 	# save to path method
