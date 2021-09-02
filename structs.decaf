@@ -15,11 +15,12 @@ class Program {
 
 	void main(void)
 	{
+		char a;
 		struct OtherTest M[5];
 		int i;
-		i = 1;	
+		a = "a";
+		i = 1;
 		M[i].T[1].n = 2;
-		
 	}
 
 }
