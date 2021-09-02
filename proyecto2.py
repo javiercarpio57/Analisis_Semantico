@@ -683,12 +683,12 @@ class DecafPrinter(DecafListener):
                             tipo = child['Tipo']
                             tipo_var = self.Find(location.array_id().var_id().getText())
                             self.CheckErrorInArrayId(location.array_id(), tipo, tipo_var)
-
-                        if self.node_type[location.array_id()] != self.ERROR:
-                            self.node_type[location] = tipo_nodo['Tipo'].split('array')[-1]
-                        else:
-                            tipo_retorno = self.ERROR
-                            self.node_type[location] = self.ERROR
+            
+                            if self.node_type[location.array_id()] != self.ERROR:
+                                self.node_type[location] = tipo_nodo['Tipo'].split('array')[-1]
+                            else:
+                                tipo_retorno = self.ERROR
+                                self.node_type[location] = self.ERROR
                 else:
                     line = location.start.line
                     col = location.start.column
