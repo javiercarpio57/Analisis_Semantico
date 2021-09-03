@@ -67,6 +67,8 @@ class DecafPrinter(DecafListener):
             ambitos_reverse = self.ambitos.copy()
             ambitos_reverse.reverse()
             for scope in ambitos_reverse:
+                print('FIND:', scope)
+                scope.ToTable()
                 lookup2 = scope.LookUp(var)
                 if lookup2 != 0:
                     return lookup2
@@ -134,6 +136,7 @@ class DecafPrinter(DecafListener):
     def exitMethod_declr(self, ctx: DecafParser.Method_declrContext):
         method = ctx.method_name().getText()
         self.PopScope()
+        print('Saliendo metodo', method)
 
         return_type = ctx.return_type().getText()
         block_type = self.node_type[ctx.block()]
@@ -156,7 +159,6 @@ class DecafPrinter(DecafListener):
             self.errores.Add(line, col, self.errores.RETURN_TYPE)
 
         self.node_type[ctx] = self.VOID
-        print('Saliendo metodo', method)
 
     def enterVardeclr(self, ctx: DecafParser.VardeclrContext):
         tipo = ctx.var_type().getText()
@@ -867,6 +869,8 @@ class DecafPrinter(DecafListener):
             if ctx.var_id().location() is not None:
                 print('------------ LOCATION ENTRADA -------------------')
                 id = ctx.var_id().getChild(0).getText()
+                # self.current_scope.ToTable()
+                
                 symbol = self.Find(id)
                 if symbol == 0:
                     line = ctx.start.line
@@ -875,6 +879,7 @@ class DecafPrinter(DecafListener):
                     self.node_type[ctx] = self.ERROR
                 else:
                     tipo_id = self.tabla_tipos.LookUp(symbol['Tipo'])
+                    print('MAIN VAR ID', symbol, tipo_id, id)
                     result_type = self.IterateChildren(ctx.var_id().location(), tipo_id['Tipo'], tipo_id['Description'])
                     self.node_type[ctx] = result_type
                     print('------------ LOCATION SALIDA -------------------', result_type)
@@ -977,5 +982,5 @@ class Compilar():
         return self.myError.getHasError()
 
 # comp = Compilar('multiple_tests.decaf')
-# if comp.printer.node_type[comp.printer.root] == 'error':
+# if comp.printer.node_type[comp.printer.root] == 'error' or len(comp.printer.errores.errores) > 0:
 #     comp.printer.errores.ToString()

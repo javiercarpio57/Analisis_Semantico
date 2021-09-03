@@ -18,7 +18,9 @@ class TablaSimbolos():
         self._offset += size
 
     def LookUp(self, variable):
-        for symbol in self._symbols:
+        symbols_copy = self._symbols.copy()
+        symbols_copy.reverse()
+        for symbol in symbols_copy:
             if symbol['Id'] == variable:
                 return symbol
 
@@ -50,7 +52,9 @@ class TablaStruct():
         })
 
     def LookUp(self, variable):
-        for symbol in self._symbols:
+        symbols_copy = self._symbols.copy()
+        symbols_copy.reverse()
+        for symbol in symbols_copy:
             if symbol['Id'] == variable:
                 return symbol
         return 0
@@ -129,7 +133,9 @@ class TablaTipos():
         })
 
     def LookUp(self, tipo):
-        for type in self._types:
+        types_copy = self._types.copy()
+        types_copy.reverse()
+        for type in types_copy:
             if type['Tipo'] == tipo:
                 return type
         return 0
