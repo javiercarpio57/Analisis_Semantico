@@ -108,11 +108,17 @@ class DecafPrinter(DecafListener):
                 if isinstance(ctx.getChild(i), DecafParser.Var_typeContext):
                     typeParameter = self.data_type[ctx.getChild(i).getText()]
                     idParameter = ctx.getChild(i + 1).getText()
+                    if idParameter in [i['Id'] for i in parameters]:
+                        line = ctx.getChild(i + 1).start.line
+                        col = ctx.getChild(i + 1).start.column
+                        self.errores.Add(line, col, self.errores.IDENTIFICADOR_DECLARADO_MUCHAS_VECES)
+
                     parameters.append({'Tipo': typeParameter, 'Id': idParameter})
 
             
             self.tabla_methods.Add(tipo, method, parameters, None)
         else:
+            # self.node_type
             line = ctx.method_name().start.line
             col = ctx.method_name().start.column
             self.errores.Add(line, col, self.errores.IDENTIFICADOR_DECLARADO_MUCHAS_VECES)
@@ -163,11 +169,19 @@ class DecafPrinter(DecafListener):
             # En caso contrario, ya está declarada, y eso es ERROR.
             if self.current_scope.LookUp(id) == 0:
                 type_symbol = self.tabla_tipos.LookUp(tipo)
+                if type_symbol == 0:
+                    line = ctx.var_type().start.line
+                    col = ctx.var_type().start.column
+                    self.errores.Add(line, col, f'El tipo {tipo} no ha sido declarado previamente.')
+                    self.node_type[ctx] = self.ERROR
+                    self.node_type[ctx.field_var()] = self.ERROR
+                    return
                 size = type_symbol['Size']
                 offset = self.current_scope._offset
 
                 self.current_scope.Add(tipo, id, size, offset, False)
             else:
+                self.node_type[ctx] = self.ERROR
                 self.node_type[ctx.field_var()] = self.ERROR
                 line = ctx.field_var().var_id().start.line
                 col = ctx.field_var().var_id().start.column
@@ -176,6 +190,15 @@ class DecafPrinter(DecafListener):
             id = ctx.field_var().array_id().getChild(0).getText()
 
             if self.current_scope.LookUp(id) == 0:
+                type_symbol = self.tabla_tipos.LookUp(tipo)
+                if type_symbol == 0:
+                    line = ctx.var_type().start.line
+                    col = ctx.var_type().start.column
+                    self.errores.Add(line, col, f'El tipo {tipo} no ha sido declarado previamente.')
+                    self.node_type[ctx] = self.ERROR
+                    self.node_type[ctx.field_var()] = self.ERROR
+                    return
+
                 tipo_array = 'array' + tipo
                 size = 0
 
@@ -188,12 +211,14 @@ class DecafPrinter(DecafListener):
                     self.tabla_tipos.Add(tipo_array, size, self.tabla_tipos.ARRAY)
 
                 type_symbol = self.tabla_tipos.LookUp(tipo_array)
+
                 size = type_symbol['Size']
                 offset = self.current_scope._offset
 
                 self.current_scope.Add(tipo_array, id, size, offset, False)
 
             else:
+                self.node_type[ctx] = self.ERROR
                 self.node_type[ctx.field_var()] = self.ERROR
                 line = ctx.field_var().var_id().start.line
                 col = ctx.field_var().var_id().start.column
@@ -223,6 +248,11 @@ class DecafPrinter(DecafListener):
             col = ctx.start.column
             self.errores.Add(line, col, self.errores.IDENTIFICADOR_DECLARADO_MUCHAS_VECES)
 
+    def enterVar_id(self, ctx: DecafParser.Var_idContext):
+        parent = ctx.parentCtx
+        if parent in self.node_type.keys():
+            self.node_type[ctx] = self.node_type[parent]
+
     def exitVar_id(self, ctx: DecafParser.Var_idContext):
         parent = ctx.parentCtx
         if parent in self.node_type.keys():
@@ -242,6 +272,11 @@ class DecafPrinter(DecafListener):
             else:
                 self.node_type[ctx] = self.VOID
         # else:
+
+    def enterArray_id(self, ctx: DecafParser.Array_idContext):
+        parent = ctx.parentCtx
+        if parent in self.node_type.keys():
+            self.node_type[ctx] = self.node_type[parent]
 
     def exitArray_id(self, ctx: DecafParser.Array_idContext):
         parent = ctx.parentCtx
@@ -422,12 +457,44 @@ class DecafPrinter(DecafListener):
             self.errores.Add(line, col, self.errores.IF_BOOLEAN)
             return
 
-        hijos_tipo = [self.node_type[i] for i in ctx.children if isinstance(i, DecafParser.BlockContext)]
+        hijos_tipo = [i for i in ctx.children if isinstance(i, DecafParser.BlockContext)]
+        tipo_return = ctx.parentCtx.parentCtx.return_type().var_type().getText()
         if len(hijos_tipo) == 1:
-            self.node_type[ctx] = hijos_tipo.pop()
+            hijo_1 = hijos_tipo.pop()
+            if tipo_return == self.node_type[hijo_1]:
+                self.node_type[ctx] = self.node_type[hijo_1]
+            else:
+                self.node_type[ctx] = self.ERROR
+                line = hijo_1.start.line
+                col = hijo_1.start.column
+                self.errores.Add(line, col, self.errores.RETURN_TYPE)
         else:
-            if hijos_tipo[0] == hijos_tipo[1]:
-                self.node_type[ctx] = hijos_tipo.pop()
+            if self.node_type[hijos_tipo[0]] != tipo_return and self.node_type[hijos_tipo[1]] != tipo_return:
+                self.node_type[ctx] = self.ERROR
+                line = hijos_tipo[0].start.line
+                col = hijos_tipo[0].start.column
+                self.errores.Add(line, col, self.errores.RETURN_TYPE)
+
+                line = hijos_tipo[1].start.line
+                col = hijos_tipo[1].start.column
+                self.errores.Add(line, col, self.errores.RETURN_TYPE)
+                return
+            elif self.node_type[hijos_tipo[0]] != tipo_return:
+                self.node_type[ctx] = self.ERROR
+                line = hijos_tipo[0].start.line
+                col = hijos_tipo[0].start.column
+                self.errores.Add(line, col, self.errores.RETURN_TYPE)
+                return
+            elif self.node_type[hijos_tipo[1]] != tipo_return:
+                self.node_type[ctx] = self.ERROR
+                line = hijos_tipo[1].start.line
+                col = hijos_tipo[1].start.column
+                self.errores.Add(line, col, self.errores.RETURN_TYPE)
+                return
+
+
+            if self.node_type[hijos_tipo[0]] == self.node_type[hijos_tipo[1]]:
+                self.node_type[ctx] = self.node_type[hijos_tipo.pop()]
             else:
                 self.node_type[ctx] = self.ERROR
         
@@ -492,6 +559,11 @@ class DecafPrinter(DecafListener):
         self.node_type[ctx] = result_type
 
     def exitExpr(self, ctx: DecafParser.ExprContext):
+        hasError = self.ChildrenHasError(ctx)
+        # if hasError:
+        #     self.node_type[ctx] = self.ERROR
+        #     return
+
         nodes_nonterminals = []
         for child in ctx.children:
             if not isinstance(child, TerminalNode):
@@ -506,6 +578,10 @@ class DecafPrinter(DecafListener):
         else:
             tipo1 = self.node_type[ctx.getChild(0)]
             tipo2 = self.node_type[ctx.getChild(2)]
+
+            if self.ERROR in [tipo1, tipo2]:
+                self.node_type[ctx] = self.ERROR
+                return
 
             result_type = self.ERROR
             error = ''
@@ -562,6 +638,7 @@ class DecafPrinter(DecafListener):
         # variable = self.Find(id)
         # tipo = variable['Tipo']
 
+        print('CHECK ERROR', id, tipo, tipo_var)
         if ctx.int_literal() is not None:
             if 'array' in tipo:
                 if tipo.split('array')[-1] in [self.INT, self.STRING, self.BOOLEAN]:
@@ -575,11 +652,11 @@ class DecafPrinter(DecafListener):
                 self.node_type[ctx] = self.ERROR
         elif ctx.var_id() is not None:
             # tipo_var = self.Find(ctx.var_id().getText())
-            print('TIPO VAR', tipo_var, tipo)
+            # print('TIPO VAR', tipo_var, tipo)
             if tipo_var == 0:
-                # line = ctx.start.line
-                # col = ctx.start.column
-                # self.errores.Add(line, col, f'Variable "{ctx.var_id().getText()}" no ha sido declarada previamente.')
+                line = ctx.start.line
+                col = ctx.start.column
+                self.errores.Add(line, col, f'Variable "{ctx.var_id().getText()}" no ha sido declarada previamente.')
                 self.node_type[ctx] = self.ERROR
                 return
 
@@ -605,27 +682,36 @@ class DecafPrinter(DecafListener):
                 self.node_type[ctx] = self.ERROR
 
     def IterateChildren(self, location, parent_type, description):
-        
+        print('ITERATE CHILDREN')
         if location.var_id() is not None:
             # CASO BASE
             if location.var_id().location() is None:
                 tipo_retorno = self.ERROR
                 id = location.var_id().getChild(0).getText()
-                if 'struct' in description:
-                    child = self.tabla_struct.GetChild(parent_type, id)
-                    if child == 0:
-                        self.node_type[location] = self.ERROR
-                        line = location.start.line
-                        col = location.start.column
-                        self.errores.Add(line, col, f'Variable "{id}" no ha sido declarada previamente.')
-                    else:
-                        tipo_nodo = self.tabla_tipos.LookUp(child['Tipo'])
-                        tipo_retorno = tipo_nodo['Tipo']
-                        self.node_type[location] = tipo_nodo['Tipo']
-                else:
+                if description is None:
+                    self.node_type[location] = self.ERROR
                     line = location.start.line
                     col = location.start.column
-                    self.errores.Add(line, col, self.errores.MUST_STRUCT)
+                    self.errores.Add(line, col, f'Variable "{id}" no ha sido declarada previamente.')
+                else:
+                    print(id, description)
+                    if 'struct' in description:
+                        child = self.tabla_struct.GetChild(parent_type, id)
+                        print(child)
+                        if child == 0:
+                            self.node_type[location] = self.ERROR
+                            line = location.start.line
+                            col = location.start.column
+                            self.errores.Add(line, col, f'Variable "{id}" no ha sido declarada previamente.')
+                        else:
+                            tipo_nodo = self.tabla_tipos.LookUp(child['Tipo'])
+                            tipo_retorno = tipo_nodo['Tipo']
+                            self.node_type[location] = tipo_nodo['Tipo']
+                    else:
+                        line = location.start.line
+                        col = location.start.column
+                        self.errores.Add(line, col, self.errores.MUST_STRUCT)
+                        self.node_type[location] = self.ERROR
 
                 return tipo_retorno
             
@@ -635,20 +721,25 @@ class DecafPrinter(DecafListener):
             child_type = None
             child_desc = None
 
-            if 'struct' in description:
-                child = self.tabla_struct.GetChild(parent_type, id)
-                if child == 0:
-                    line = location.start.line
-                    col = location.start.column
-                    self.errores.Add(line, col, f'Variable "{id}" no ha sido declarada previamente.')
-                else:
-                    child_type = child['Tipo']
-                    child_desc = child['Description']
-                    tipo_nodo = self.tabla_tipos.LookUp(child['Tipo'])
-            else:
+            if description is None:
                 line = location.start.line
                 col = location.start.column
                 self.errores.Add(line, col, self.errores.MUST_STRUCT)
+            else:
+                if 'struct' in description:
+                    child = self.tabla_struct.GetChild(parent_type, id)
+                    if child == 0:
+                        line = location.start.line
+                        col = location.start.column
+                        self.errores.Add(line, col, f'Variable "{id}" no ha sido declarada previamente.')
+                    else:
+                        child_type = child['Tipo']
+                        child_desc = child['Description']
+                        tipo_nodo = self.tabla_tipos.LookUp(child['Tipo'])
+                else:
+                    line = location.start.line
+                    col = location.start.column
+                    self.errores.Add(line, col, self.errores.MUST_STRUCT)
 
             result_type = self.IterateChildren(location.var_id().location(), child_type, child_desc)
             self.node_type[location] = result_type
@@ -660,39 +751,51 @@ class DecafPrinter(DecafListener):
             if location.array_id().location() is None:
                 tipo_retorno = self.ERROR
                 id = location.array_id().getChild(0).getText()
-                if 'struct' in description:
-                    child = self.tabla_struct.GetChild(parent_type, id)
-                    if child == 0:
-                        self.node_type[location] = self.ERROR
-                        line = location.start.line
-                        col = location.start.column
-                        self.errores.Add(line, col, f'Variable "{id}" no ha sido declarada previamente.')
-                    else:
-                        # HIJO IZQUIERDO
-                        tipo_nodo = self.tabla_tipos.LookUp(child['Tipo'])
-                        tipo_retorno = tipo_nodo['Tipo'].split('array')[-1]
-
-                        # HIJO DERECHO
-                        if location.array_id().int_literal() is not None:
-                            if 'array' not in child['Tipo']:
-                                line = location.array_id().start.line
-                                col = location.array_id().start.column
-                                self.errores.Add(line, col, f'Variable "{id}" debe ser un array.')
-                                self.node_type[location] = self.ERROR
-                        elif location.array_id().var_id() is not None:
-                            tipo = child['Tipo']
-                            tipo_var = self.Find(location.array_id().var_id().getText())
-                            self.CheckErrorInArrayId(location.array_id(), tipo, tipo_var)
-            
-                            if self.node_type[location.array_id()] != self.ERROR:
-                                self.node_type[location] = tipo_nodo['Tipo'].split('array')[-1]
-                            else:
-                                tipo_retorno = self.ERROR
-                                self.node_type[location] = self.ERROR
-                else:
+                if description is None:
+                    self.node_type[location] = self.ERROR
                     line = location.start.line
                     col = location.start.column
-                    self.errores.Add(line, col, self.errores.MUST_STRUCT)
+                    self.errores.Add(line, col, f'Variable "{id}" no ha sido declarada previamente.')
+                else:
+                    if 'struct' in description:
+                        child = self.tabla_struct.GetChild(parent_type, id)
+                        print(parent_type, id, child)
+                        if child == 0:
+                            self.node_type[location] = self.ERROR
+                            line = location.start.line
+                            col = location.start.column
+                            self.errores.Add(line, col, f'Variable "{id}" no ha sido declarada previamente.')
+                        else:
+                            # HIJO IZQUIERDO
+                            tipo_nodo = self.tabla_tipos.LookUp(child['Tipo'])
+                            tipo_retorno = tipo_nodo['Tipo'].split('array')[-1]
+
+                            # HIJO DERECHO
+                            if location.array_id().int_literal() is not None:
+                                print('CHILD TYPE', location.array_id().int_literal().getText(), child['Tipo'])
+                                if 'array' not in child['Tipo']:
+                                    line = location.array_id().start.line
+                                    col = location.array_id().start.column
+                                    self.errores.Add(line, col, f'Variable "{id}" debe ser un array.')
+                                    self.node_type[location] = self.ERROR
+                                else:
+                                    self.node_type[location] = child['Tipo'].split('array')[-1]
+                            elif location.array_id().var_id() is not None:
+                                tipo = child['Tipo']
+                                tipo_var = self.Find(location.array_id().var_id().getText())
+                                print(location.array_id().var_id().getText(), tipo, tipo_var)
+                                self.CheckErrorInArrayId(location.array_id(), tipo, tipo_var)
+                
+                                if self.node_type[location.array_id()] != self.ERROR:
+                                    self.node_type[location] = tipo_nodo['Tipo'].split('array')[-1]
+                                else:
+                                    tipo_retorno = self.ERROR
+                                    self.node_type[location] = self.ERROR
+                    else:
+                        line = location.start.line
+                        col = location.start.column
+                        self.errores.Add(line, col, self.errores.MUST_STRUCT)
+                        self.node_type[location] = self.ERROR
                 return tipo_retorno
             
             print('----------------------------------------------------------------------------------------')
@@ -745,6 +848,11 @@ class DecafPrinter(DecafListener):
             return result_type
 
     def enterLocation(self, ctx: DecafParser.LocationContext):
+        parent = ctx.parentCtx
+        if parent in self.node_type.keys():
+            if self.node_type[parent] == self.ERROR:
+                self.node_type[ctx] = self.ERROR
+
         if ctx in self.node_type.keys():
             return
         if ctx.var_id() is not None:
@@ -753,25 +861,38 @@ class DecafPrinter(DecafListener):
         elif ctx.array_id() is not None:
             if ctx.array_id().location() is None:
                 return
+
         
         if ctx.var_id() is not None:
             if ctx.var_id().location() is not None:
                 print('------------ LOCATION ENTRADA -------------------')
                 id = ctx.var_id().getChild(0).getText()
                 symbol = self.Find(id)
-                tipo_id = self.tabla_tipos.LookUp(symbol['Tipo'])
-                result_type = self.IterateChildren(ctx.var_id().location(), tipo_id['Tipo'], tipo_id['Description'])
-                self.node_type[ctx] = result_type
-                print('------------ LOCATION SALIDA -------------------', result_type)
+                if symbol == 0:
+                    line = ctx.start.line
+                    col = ctx.start.column
+                    self.errores.Add(line, col, f'Variable "{ctx.var_id().getChild(0).getText()}" no ha sido declarada previamente.')
+                    self.node_type[ctx] = self.ERROR
+                else:
+                    tipo_id = self.tabla_tipos.LookUp(symbol['Tipo'])
+                    result_type = self.IterateChildren(ctx.var_id().location(), tipo_id['Tipo'], tipo_id['Description'])
+                    self.node_type[ctx] = result_type
+                    print('------------ LOCATION SALIDA -------------------', result_type)
 
         if ctx.array_id() is not None:
             if ctx.array_id().location() is not None:
                 print('------------ LOCATION ENTRADA -------------------')
                 id = ctx.array_id().getChild(0).getText()
                 symbol = self.Find(id)
-                tipo_id = self.tabla_tipos.LookUp(symbol['Tipo'])
-                result_type = self.IterateChildren(ctx.array_id().location(), tipo_id['Tipo'], tipo_id['Description'])
-                self.node_type[ctx] = result_type
+                if symbol == 0:
+                    line = ctx.start.line
+                    col = ctx.start.column
+                    self.errores.Add(line, col, f'Variable "{ctx.array_id().getChild(0).getText()}" no ha sido declarada previamente.')
+                    self.node_type[ctx] = self.ERROR
+                else:
+                    tipo_id = self.tabla_tipos.LookUp(symbol['Tipo'])
+                    result_type = self.IterateChildren(ctx.array_id().location(), tipo_id['Tipo'], tipo_id['Description'])
+                    self.node_type[ctx] = result_type
 
                 # print('LOCATION', id, tipo_id)
 
@@ -779,23 +900,23 @@ class DecafPrinter(DecafListener):
                 # tipo_nodo = self.tabla_tipos.LookUp(tipo_id['Tipo'])
 
                 # HIJO DERECHO
-                if ctx.array_id().int_literal() is not None:
-                    if 'array' not in tipo_id['Tipo']:
-                        line = ctx.array_id().start.line
-                        col = ctx.array_id().start.column
-                        self.errores.Add(line, col, f'Variable "{id}" debe ser un array.')
-                        self.node_type[ctx] = self.ERROR
-                elif ctx.array_id().var_id() is not None:
-                    tipo = tipo_id['Tipo']
-                    tipo_var = self.Find(ctx.array_id().var_id().getText())
-                    # print('LOCATION 2', tipo, tipo_var)
-                    self.CheckErrorInArrayId(ctx.array_id(), tipo, tipo_var)
+                    if ctx.array_id().int_literal() is not None:
+                        if 'array' not in tipo_id['Tipo']:
+                            line = ctx.array_id().start.line
+                            col = ctx.array_id().start.column
+                            self.errores.Add(line, col, f'Variable "{id}" debe ser un array.')
+                            self.node_type[ctx] = self.ERROR
+                    elif ctx.array_id().var_id() is not None:
+                        tipo = tipo_id['Tipo']
+                        tipo_var = self.Find(ctx.array_id().var_id().getText())
+                        # print('LOCATION 2', tipo, tipo_var)
+                        self.CheckErrorInArrayId(ctx.array_id(), tipo, tipo_var)
 
-                if ctx.array_id() in self.node_type.keys():
-                    if self.node_type[ctx.array_id()] == self.ERROR:
-                        self.node_type[ctx] = self.ERROR
+                    if ctx.array_id() in self.node_type.keys():
+                        if self.node_type[ctx.array_id()] == self.ERROR:
+                            self.node_type[ctx] = self.ERROR
 
-                print('------------ LOCATION SALIDA -------------------', result_type)
+                    print('------------ LOCATION SALIDA -------------------', result_type)
 
     def exitLocation(self, ctx: DecafParser.LocationContext):
         if ctx not in self.node_type.keys():
@@ -828,9 +949,9 @@ class DecafPrinter(DecafListener):
         self.tabla_methods.ToTable()
         self.tabla_struct.ToTable()
 
-        # for i, j in self.node_type.items():
-        #     if isinstance(i, DecafParser.ProgramContext):
-        #         print(i, j)
+        for i, j in self.node_type.items():
+            if isinstance(i, DecafParser.BlockContext):
+                print(i, j)
 
 
 class Compilar():
@@ -854,3 +975,7 @@ class Compilar():
 
     def HasLexicalError(self):
         return self.myError.getHasError()
+
+# comp = Compilar('multiple_tests.decaf')
+# if comp.printer.node_type[comp.printer.root] == 'error':
+#     comp.printer.errores.ToString()

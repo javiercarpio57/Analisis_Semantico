@@ -276,6 +276,10 @@ class MainWindow(QMainWindow):
 
 	def compile(self):
 		print('COMPILANDO...')
+		if self.path is None:
+			return self.file_saveas()
+		self._save_to_path(self.path)
+		
 		input = self.path
 
 		if self.editor.toPlainText() != '':
@@ -287,7 +291,7 @@ class MainWindow(QMainWindow):
 				self.showErrors.setText(errores)
 				
 			else:
-				if compilado.printer.node_type[compilado.printer.root] == 'error':
+				if compilado.printer.node_type[compilado.printer.root] == 'error' or len(compilado.printer.errores.errores) > 0:
 					# print(compilado.printer.errores.GetErrores())
 					errores = '\n'.join(compilado.printer.errores.GetErrores())
 					self.showErrors.setText(errores)
