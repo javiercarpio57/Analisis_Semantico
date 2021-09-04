@@ -4,10 +4,10 @@ class Program {
 	{
 		int a;
 	};
-
+	
 	struct B
 	{
-		int b[5];
+		int b[2];
 		struct A c;
 	};
 
@@ -15,10 +15,11 @@ class Program {
 	struct A z;
 	int factorial(int n)
 	{
-		if (n==0)
-		{return 1;}
-		else
-		{return n*factorial(n-1);}
+		if (n==0) {
+			return 1;
+		} else {
+			return n*factorial(n-1);
+		}
 	}
 
 	void OutputInt(int n)
@@ -33,11 +34,10 @@ class Program {
 
 	void main(void)
 	{
-		struct B y[5];
+		struct B y[10];
 		int i;
 		int j;
-		int k;	
-
+		int k;
 
 		i = 0;
 		j=0;
@@ -46,7 +46,7 @@ class Program {
 		while(i<=10)
 		{
 			
-			y[j].b[0]=InputInt();
+			y[i].b[-1] = InputInt();
 			if(y[j].b[0]==5)
 			{
 				y[j].b[0]=z.a;
@@ -56,7 +56,7 @@ class Program {
 
 			y[j].c.a=factorial(y[j].b[0]);
 			OutputInt(y[j].c.a);
-			i = i + 1;
+			i = i+ 1;
 		}
 	}
 

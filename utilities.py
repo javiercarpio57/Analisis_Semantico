@@ -38,6 +38,39 @@ class TablaSimbolos():
         print(self.pretty_table)
         self.pretty_table.clear_rows()
 
+class TablaParametros():
+    def __init__(self):
+        self.pretty_table = PrettyTable()
+        self._symbols = []
+        print(' -- INICIANDO NUEVO AMBITO --')
+
+    def Add(self, tipo, id):
+        self._symbols.append({
+            'Tipo': tipo,
+            'Id': id,
+        })
+
+    def LookUp(self, variable):
+        symbols_copy = self._symbols.copy()
+        symbols_copy.reverse()
+        for symbol in symbols_copy:
+            if symbol['Id'] == variable:
+                return symbol
+        return 0
+
+    def ToTable(self):
+        self.pretty_table.field_names = ['Tipo', 'ID']
+        for i in self._symbols:
+            self.pretty_table.add_row(list(i.values()))
+
+        print(' ** PARAMETERS **')
+        print(self.pretty_table)
+        self.pretty_table.clear_rows()
+
+    def Clear(self):
+        self.ToTable()
+        self._symbols = []
+
 class TablaStruct():
     def __init__(self):
         self.pretty_table = PrettyTable()
@@ -158,6 +191,7 @@ class SemanticError():
         self.RETURN_VOID = 'Un método declarado VOID no puede retornar ningún valor.'
         self.MUST_STRUCT = 'El tipo de dato de la variable debe ser STRUCT.'
         self.METHOD_NOT_DECLARED = 'El método no existe o no hay definición del método previamente a ser invocado.'
+        self.SHADOW_PARAMETER = 'No es posible declarar una variable con el nombre de un parámetro.'
 
     def Add(self, line, col, msg):
         self.errores.append({

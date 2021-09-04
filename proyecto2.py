@@ -48,6 +48,7 @@ class DecafPrinter(DecafListener):
         self.errores = SemanticError()
         self.tabla_methods = TablaMetodos()
         self.tabla_struct = TablaStruct()
+        self.tabla_parameters = TablaParametros()
         
         self.node_type = {}
 
@@ -67,8 +68,6 @@ class DecafPrinter(DecafListener):
             ambitos_reverse = self.ambitos.copy()
             ambitos_reverse.reverse()
             for scope in ambitos_reverse:
-                print('FIND:', scope)
-                scope.ToTable()
                 lookup2 = scope.LookUp(var)
                 if lookup2 != 0:
                     return lookup2
@@ -116,6 +115,7 @@ class DecafPrinter(DecafListener):
                         self.errores.Add(line, col, self.errores.IDENTIFICADOR_DECLARADO_MUCHAS_VECES)
 
                     parameters.append({'Tipo': typeParameter, 'Id': idParameter})
+                    self.tabla_parameters.Add(typeParameter, idParameter)
 
             
             self.tabla_methods.Add(tipo, method, parameters, None)
@@ -135,6 +135,7 @@ class DecafPrinter(DecafListener):
 
     def exitMethod_declr(self, ctx: DecafParser.Method_declrContext):
         method = ctx.method_name().getText()
+        self.tabla_parameters.Clear()
         self.PopScope()
         print('Saliendo metodo', method)
 
@@ -169,6 +170,15 @@ class DecafPrinter(DecafListener):
 
             # Si no encuentra una variable, la guarda en la tabla de simbolos
             # En caso contrario, ya está declarada, y eso es ERROR.
+
+            if self.tabla_parameters.LookUp(id) != 0:
+                self.node_type[ctx] = self.ERROR
+                self.node_type[ctx.field_var()] = self.ERROR
+                line = ctx.field_var().var_id().start.line
+                col = ctx.field_var().var_id().start.column
+                self.errores.Add(line, col, self.errores.SHADOW_PARAMETER)
+                return
+
             if self.current_scope.LookUp(id) == 0:
                 type_symbol = self.tabla_tipos.LookUp(tipo)
                 if type_symbol == 0:
@@ -191,6 +201,14 @@ class DecafPrinter(DecafListener):
         elif ctx.field_var().array_id() is not None:
             id = ctx.field_var().array_id().getChild(0).getText()
 
+            if self.tabla_parameters.LookUp(id) != 0:
+                self.node_type[ctx] = self.ERROR
+                self.node_type[ctx.field_var()] = self.ERROR
+                line = ctx.field_var().var_id().start.line
+                col = ctx.field_var().var_id().start.column
+                self.errores.Add(line, col, self.errores.SHADOW_PARAMETER)
+                return
+                
             if self.current_scope.LookUp(id) == 0:
                 type_symbol = self.tabla_tipos.LookUp(tipo)
                 if type_symbol == 0:
@@ -257,7 +275,7 @@ class DecafPrinter(DecafListener):
 
     def exitVar_id(self, ctx: DecafParser.Var_idContext):
         parent = ctx.parentCtx
-        if parent in self.node_type.keys():
+        if parent in self.node_type.keys() or ctx in self.node_type.keys():
             return
 
         # if ctx.getChildCount() == 1:
@@ -282,7 +300,7 @@ class DecafPrinter(DecafListener):
 
     def exitArray_id(self, ctx: DecafParser.Array_idContext):
         parent = ctx.parentCtx
-        if parent in self.node_type.keys():
+        if parent in self.node_type.keys() or ctx in self.node_type.keys():
             return
 
         id = ctx.getChild(0).getText()
@@ -430,6 +448,10 @@ class DecafPrinter(DecafListener):
         hasError = False
         for i in range(len(parameters)):
             tipo_parametro = self.node_type[parameters[i]]
+            if tipo_parametro == self.ERROR:
+                self.node_type[ctx] = self.ERROR
+                return
+
             tipo_metodo = method_info['Parameters'][i]['Tipo']
 
             if tipo_parametro != tipo_metodo:
@@ -443,6 +465,25 @@ class DecafPrinter(DecafListener):
                 self.node_type[ctx] = self.ERROR
             else:
                 self.node_type[ctx] = method_info['Tipo']
+
+    def GetMethodType(self, ctx):
+        nodo = ctx.parentCtx
+        hijos = [str(type(i)) for i in nodo.children if not isinstance(i, TerminalNode)]
+        # print('GET METHOD', type(nodo), nodo.getChildCount())
+        # print('get method type:', [str(type(i)) for i in nodo.children if not isinstance(i, TerminalNode)], str(DecafParser.Return_typeContext), str(DecafParser.Return_typeContext) in [str(type(i)) for i in nodo.children if not isinstance(i, TerminalNode)])
+        while str(DecafParser.Return_typeContext) not in hijos:
+            nodo = nodo.parentCtx
+            hijos = [str(type(i)) for i in nodo.children if not isinstance(i, TerminalNode)]
+            # if isinstance(nodo, DecafParser.StatementContext):
+            #     nodo = ctx.parentCtx.
+            # print('GET METHOD', type(nodo), nodo.getChildCount())
+            # print('get method type:', [str(type(i)) for i in nodo.children if not isinstance(i, TerminalNode)], str(DecafParser.Return_typeContext), str(DecafParser.Return_typeContext) in [str(type(i)) for i in nodo.children if not isinstance(i, TerminalNode)])
+            # break
+
+        if nodo.return_type().var_type() is not None:
+            return nodo.return_type().var_type().getText()
+        else:
+            return nodo.return_type().getText()
 
     def exitStatement_if(self, ctx: DecafParser.Statement_ifContext):
         error = self.ChildrenHasError(ctx)
@@ -460,7 +501,7 @@ class DecafPrinter(DecafListener):
             return
 
         hijos_tipo = [i for i in ctx.children if isinstance(i, DecafParser.BlockContext)]
-        tipo_return = ctx.parentCtx.parentCtx.return_type().var_type().getText()
+        tipo_return = self.GetMethodType(ctx)
         if len(hijos_tipo) == 1:
             hijo_1 = hijos_tipo.pop()
             if tipo_return == self.node_type[hijo_1]:
@@ -602,6 +643,15 @@ class DecafPrinter(DecafListener):
                     result_type = self.INT
                     if ctx.rel_op() is not None:
                         result_type = self.BOOLEAN
+                elif tipo1 == self.FLOAT and tipo2 == self.INT:
+                    result_type = self.FLOAT
+                    if ctx.rel_op() is not None:
+                        result_type = self.BOOLEAN
+
+                elif tipo1 == self.INT and tipo2 == self.FLOAT:
+                    result_type = self.FLOAT
+                    if ctx.rel_op() is not None:
+                        result_type = self.BOOLEAN
                 else:
                     hasError = True
                     if tipo1 != self.INT:
@@ -640,7 +690,6 @@ class DecafPrinter(DecafListener):
         # variable = self.Find(id)
         # tipo = variable['Tipo']
 
-        print('CHECK ERROR', id, tipo, tipo_var)
         if ctx.int_literal() is not None:
             if 'array' in tipo:
                 if tipo.split('array')[-1] in [self.INT, self.STRING, self.BOOLEAN]:
@@ -654,7 +703,6 @@ class DecafPrinter(DecafListener):
                 self.node_type[ctx] = self.ERROR
         elif ctx.var_id() is not None:
             # tipo_var = self.Find(ctx.var_id().getText())
-            # print('TIPO VAR', tipo_var, tipo)
             if tipo_var == 0:
                 line = ctx.start.line
                 col = ctx.start.column
@@ -684,7 +732,6 @@ class DecafPrinter(DecafListener):
                 self.node_type[ctx] = self.ERROR
 
     def IterateChildren(self, location, parent_type, description):
-        print('ITERATE CHILDREN')
         if location.var_id() is not None:
             # CASO BASE
             if location.var_id().location() is None:
@@ -692,14 +739,12 @@ class DecafPrinter(DecafListener):
                 id = location.var_id().getChild(0).getText()
                 if description is None:
                     self.node_type[location] = self.ERROR
-                    line = location.start.line
-                    col = location.start.column
-                    self.errores.Add(line, col, f'Variable "{id}" no ha sido declarada previamente.')
+                    # line = location.start.line
+                    # col = location.start.column
+                    # self.errores.Add(line, col, f'Variable "{id}" no ha sido declarada previamente.')
                 else:
-                    print(id, description)
                     if 'struct' in description:
                         child = self.tabla_struct.GetChild(parent_type, id)
-                        print(child)
                         if child == 0:
                             self.node_type[location] = self.ERROR
                             line = location.start.line
@@ -716,6 +761,7 @@ class DecafPrinter(DecafListener):
                         self.node_type[location] = self.ERROR
 
                 return tipo_retorno
+             
             
             print('----------------------------------------------------------------------------------------')
             id = location.var_id().getChild(0).getText()
@@ -755,13 +801,12 @@ class DecafPrinter(DecafListener):
                 id = location.array_id().getChild(0).getText()
                 if description is None:
                     self.node_type[location] = self.ERROR
-                    line = location.start.line
-                    col = location.start.column
-                    self.errores.Add(line, col, f'Variable "{id}" no ha sido declarada previamente.')
+                    # line = location.start.line
+                    # col = location.start.column
+                    # self.errores.Add(line, col, f'Variable "{id}" no ha sido declarada previamente.')
                 else:
                     if 'struct' in description:
                         child = self.tabla_struct.GetChild(parent_type, id)
-                        print(parent_type, id, child)
                         if child == 0:
                             self.node_type[location] = self.ERROR
                             line = location.start.line
@@ -774,18 +819,16 @@ class DecafPrinter(DecafListener):
 
                             # HIJO DERECHO
                             if location.array_id().int_literal() is not None:
-                                print('CHILD TYPE', location.array_id().int_literal().getText(), child['Tipo'])
                                 if 'array' not in child['Tipo']:
                                     line = location.array_id().start.line
                                     col = location.array_id().start.column
-                                    self.errores.Add(line, col, f'Variable "{id}" debe ser un array.')
+                                    self.errores.Add(line, col, f'Variable "{id}" debe ser un array.') # ATENCION
                                     self.node_type[location] = self.ERROR
                                 else:
                                     self.node_type[location] = child['Tipo'].split('array')[-1]
                             elif location.array_id().var_id() is not None:
                                 tipo = child['Tipo']
                                 tipo_var = self.Find(location.array_id().var_id().getText())
-                                print(location.array_id().var_id().getText(), tipo, tipo_var)
                                 self.CheckErrorInArrayId(location.array_id(), tipo, tipo_var)
                 
                                 if self.node_type[location.array_id()] != self.ERROR:
@@ -879,7 +922,13 @@ class DecafPrinter(DecafListener):
                     self.node_type[ctx] = self.ERROR
                 else:
                     tipo_id = self.tabla_tipos.LookUp(symbol['Tipo'])
-                    print('MAIN VAR ID', symbol, tipo_id, id)
+                    print('TIPO VARIABLE', tipo_id)
+                    if 'array' in tipo_id['Tipo']:
+                        line = ctx.start.line
+                        col = ctx.start.column
+                        self.errores.Add(line, col, f'Variable "{ctx.var_id().getChild(0).getText()}" debe ser un array.')
+                        self.node_type[ctx] = self.ERROR
+                        return    
                     result_type = self.IterateChildren(ctx.var_id().location(), tipo_id['Tipo'], tipo_id['Description'])
                     self.node_type[ctx] = result_type
                     print('------------ LOCATION SALIDA -------------------', result_type)
@@ -896,10 +945,10 @@ class DecafPrinter(DecafListener):
                     self.node_type[ctx] = self.ERROR
                 else:
                     tipo_id = self.tabla_tipos.LookUp(symbol['Tipo'])
+                    # print('ARRAY ID ENTER LOCATION', id, tipo_id)
                     result_type = self.IterateChildren(ctx.array_id().location(), tipo_id['Tipo'], tipo_id['Description'])
                     self.node_type[ctx] = result_type
 
-                # print('LOCATION', id, tipo_id)
 
                 # HIJO IZQUIERDO
                 # tipo_nodo = self.tabla_tipos.LookUp(tipo_id['Tipo'])
@@ -914,7 +963,6 @@ class DecafPrinter(DecafListener):
                     elif ctx.array_id().var_id() is not None:
                         tipo = tipo_id['Tipo']
                         tipo_var = self.Find(ctx.array_id().var_id().getText())
-                        # print('LOCATION 2', tipo, tipo_var)
                         self.CheckErrorInArrayId(ctx.array_id(), tipo, tipo_var)
 
                     if ctx.array_id() in self.node_type.keys():
@@ -954,9 +1002,9 @@ class DecafPrinter(DecafListener):
         self.tabla_methods.ToTable()
         self.tabla_struct.ToTable()
 
-        for i, j in self.node_type.items():
-            if isinstance(i, DecafParser.BlockContext):
-                print(i, j)
+        # for i, j in self.node_type.items():
+        #     if isinstance(i, DecafParser.BlockContext):
+        #         print(i, j)
 
 
 class Compilar():
@@ -981,6 +1029,6 @@ class Compilar():
     def HasLexicalError(self):
         return self.myError.getHasError()
 
-# comp = Compilar('multiple_tests.decaf')
-# if comp.printer.node_type[comp.printer.root] == 'error' or len(comp.printer.errores.errores) > 0:
-#     comp.printer.errores.ToString()
+comp = Compilar('multiple_tests.decaf')
+if comp.printer.node_type[comp.printer.root] == 'error' or len(comp.printer.errores.errores) > 0:
+    comp.printer.errores.ToString()
